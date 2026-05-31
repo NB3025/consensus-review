@@ -1,0 +1,774 @@
+<!--
+  Consensus Review — HTML 리포트 템플릿 (자기완결형)
+
+  사용 방법:
+  - 메인 에이전트가 집계 결과를 받은 뒤, 사용자가 HTML 형식을 명시적으로 요청한 경우 사용.
+  - 모든 {중괄호} 자리표시자를 실제 값으로 치환.
+  - 이슈는 {{ISSUES_LOOP}} 자리에 카드 형태로 반복 삽입 (주석 참조).
+  - CSS/JS 인라인. 외부 의존성 0. 파일 하나로 동작.
+
+  치환 규칙:
+  - {제목}, {N}, {X}/{Y}/{Z}, {a}/{b}/{c}, {ISSUES_HTML} 만 치환.
+  - 이모지(🔴🟡⚪📋💡)는 리터럴.
+  - severity-card 클래스는 tier에 따라 .severity-high / .severity-mid / .severity-low.
+
+  카드 enrichment (자동):
+  - 페이지 하단 JS가 모든 .issue 카드에 .glance 영역(🔍 진단 / 👉 검토 / 📍 출처)을 자동 삽입합니다.
+  - 진단 = .reasoning 텍스트, 검토 = .tag.type → TYPE_ACTIONS 매핑(ko/en),
+    출처 = .quotes li 끝 괄호 패턴 자동 추출 (예: "..." (Glossary)).
+  - 따라서 quote 끝에 (출처) 괄호를 일관되게 붙이세요. 카드의 open 속성은 붙이지 마세요(기본 접힘).
+-->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📋 Consensus Review — {원본파일명}</title>
+<style>
+  :root {
+    --bg: #fafaf9;
+    --bg-card: #ffffff;
+    --text: #1c1917;
+    --text-sub: #57534e;
+    --border: #e7e5e4;
+    --high: #dc2626;
+    --high-bg: #fef2f2;
+    --mid: #b45309;
+    --mid-bg: #fffbeb;
+    --low: #6b7280;
+    --low-bg: #f9fafb;
+    --quote-bg: #fef3c7;
+    --code-bg: #f3f4f6;
+    --focus-ring: var(--text);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c0a09;
+      --bg-card: #1c1917;
+      --text: #fafaf9;
+      --text-sub: #a8a29e;
+      --border: #292524;
+      --high: #f87171;
+      --high-bg: #450a0a;
+      --mid: #fbbf24;
+      --mid-bg: #451a03;
+      --low: #9ca3af;
+      --low-bg: #1f2937;
+      --quote-bg: #3a1d05;
+      --code-bg: #292524;
+      --focus-ring: var(--text);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  /* Accessibility */
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .skip-link {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    padding: 8px 14px;
+    background: var(--bg-card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-weight: 700;
+    text-decoration: none;
+    z-index: 100;
+    transform: translateY(-200%);
+    transition: transform 0.15s;
+  }
+  .skip-link:focus {
+    transform: translateY(0);
+  }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 16px;
+  }
+  .container { max-width: 920px; margin: 0 auto; padding: 32px 20px 80px; }
+
+  /* Header */
+  .header { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 32px; }
+  .header h1 { font-size: 1.8em; margin: 0 0 8px; font-weight: 800; }
+  .header .meta { color: var(--text-sub); font-size: 0.95em; }
+  .header .meta strong { color: var(--text); }
+
+  /* Summary bar */
+  .summary {
+    display: flex; gap: 12px; flex-wrap: wrap;
+    margin: 24px 0;
+  }
+  .summary-pill {
+    padding: 10px 18px; border-radius: 999px; font-weight: 700; font-size: 0.95em;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .summary-pill.high { background: var(--high-bg); color: var(--high); border: 1px solid var(--high); }
+  .summary-pill.mid  { background: var(--mid-bg);  color: var(--mid);  border: 1px solid var(--mid); }
+  .summary-pill.low  { background: var(--low-bg);  color: var(--low);  border: 1px solid var(--low); }
+  .summary-pill.total { background: var(--bg-card); color: var(--text); border: 1px solid var(--border); }
+
+  /* Reviewer breakdown — details 토글로 기본 닫힘 */
+  .reviewer-stats {
+    margin-bottom: 32px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-card);
+  }
+  .reviewer-stats summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 12px 16px;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: var(--text-sub);
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .reviewer-stats summary::-webkit-details-marker { display: none; }
+  .reviewer-stats summary::after {
+    content: "▸";
+    margin-left: auto;
+    transition: transform 0.2s;
+  }
+  .reviewer-stats[open] summary::after { transform: rotate(90deg); }
+  .reviewer-stats summary:hover { background: var(--code-bg); border-radius: 8px 8px 0 0; }
+
+  .reviewer-table { width: 100%; border-collapse: collapse; }
+  .reviewer-table th, .reviewer-table td {
+    padding: 10px 16px; text-align: left;
+    border-top: 1px solid var(--border);
+    font-size: 0.95em;
+  }
+  .reviewer-table th { background: var(--bg); font-weight: 700; color: var(--text-sub); }
+  .reviewer-table td:last-child { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+
+  /* Filter toggle */
+  .filter-bar {
+    display: flex; gap: 8px; flex-wrap: wrap;
+    margin: 32px 0 16px;
+    padding: 12px; border-radius: 8px; background: var(--bg-card); border: 1px solid var(--border);
+  }
+  .filter-bar .filter-label {
+    font-size: 0.85em; color: var(--text-sub); align-self: center; margin-right: 8px;
+    font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .filter-btn {
+    padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--text); cursor: pointer; font-size: 0.9em;
+    font-family: inherit; font-weight: 600; transition: all 0.15s;
+    min-height: 36px;
+  }
+  .filter-btn:hover { background: var(--code-bg); }
+  .filter-btn[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+  /* Tier section header */
+  .tier-section { margin: 40px 0 16px; }
+  .tier-header {
+    display: flex; align-items: baseline; gap: 12px;
+    margin-bottom: 8px;
+  }
+  .tier-header h2 { margin: 0; font-size: 1.3em; font-weight: 800; }
+  .tier-header .count { color: var(--text-sub); font-weight: 600; font-size: 0.95em; }
+  .tier-section .desc { color: var(--text-sub); font-size: 0.9em; margin: 0 0 16px; }
+
+  /* Top Actions: 상단 요약형 권장 조치 박스 (의사결정자가 스크롤 없이 우선순위 파악) */
+  .top-actions {
+    margin: 28px 0 8px;
+    padding: 18px 22px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--high);
+    border-radius: 8px;
+  }
+  .top-actions h2 {
+    margin: 0 0 12px;
+    font-size: 1.05em;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .top-actions ol {
+    margin: 0;
+    padding-left: 22px;
+    color: var(--text);
+    font-size: 0.95em;
+    line-height: 1.6;
+  }
+  .top-actions ol li { margin-bottom: 6px; }
+  .top-actions ol li:last-child { margin-bottom: 0; }
+  .top-actions .more {
+    margin-top: 10px;
+    font-size: 0.85em;
+    color: var(--text-sub);
+  }
+  .top-actions .more a { color: var(--text-sub); }
+
+  /* Issue card */
+  .issue {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--low);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .issue.severity-high { border-left-color: var(--high); }
+  .issue.severity-mid  { border-left-color: var(--mid); }
+  .issue.severity-low  { border-left-color: var(--low); }
+
+  .issue summary {
+    list-style: none;
+    padding: 16px 20px;
+    cursor: pointer;
+    display: grid;
+    grid-template-columns: auto auto 1fr auto;
+    align-items: center;
+    gap: 14px;
+    user-select: none;
+  }
+  .issue summary::-webkit-details-marker { display: none; }
+  .issue summary:hover { background: var(--code-bg); }
+  .issue summary .marker {
+    color: var(--text-sub);
+    transition: transform 0.2s;
+  }
+  .issue[open] summary .marker { transform: rotate(90deg); }
+
+  .issue .iss-id {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 0.85em; padding: 3px 8px; border-radius: 4px;
+    background: var(--code-bg); color: var(--text-sub);
+    flex-shrink: 0;
+  }
+  .issue .iss-title { font-weight: 700; }
+  .issue.severity-high .iss-emoji { color: var(--high); }
+  .issue.severity-mid  .iss-emoji { color: var(--mid); }
+  .issue.severity-low  .iss-emoji { color: var(--low); }
+
+  /* Glance: summary 외부 형제 영역. 접힘/펼침 모두 항상 보임. */
+  .issue > .glance {
+    display: grid;
+    gap: 8px;
+    padding: 0 20px 16px;
+    font-size: 0.96em;
+    color: var(--text);
+    line-height: 1.55;
+    user-select: text;
+  }
+  .issue > .glance .diagnose,
+  .issue > .glance .action,
+  .issue > .glance .source {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px;
+  }
+  .issue > .glance .label {
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+    min-width: 60px;
+  }
+  .issue > .glance .source-list {
+    color: var(--text-sub);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 0.9em;
+  }
+  .issue > .glance .evidence-count {
+    color: var(--text-sub);
+    font-size: 0.9em;
+    margin-left: 6px;
+    font-weight: 500;
+  }
+  .issue[open] > .glance {
+    border-bottom: 1px dashed var(--border);
+    margin-bottom: 16px;
+  }
+
+  /* Issue body */
+  .issue-body { padding: 0 20px 20px; }
+  .issue-meta {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .issue-meta .tag {
+    padding: 4px 10px; border-radius: 4px;
+    background: var(--code-bg); color: var(--text-sub);
+    font-size: 0.82em; font-weight: 600;
+  }
+  .issue-meta .tag.type { background: var(--low-bg); color: var(--text); }
+  .issue-meta .tag.severity-CRITICAL { background: var(--high-bg); color: var(--high); }
+  .issue-meta .tag.severity-MAJOR    { background: var(--mid-bg);  color: var(--mid); }
+  .issue-meta .tag.severity-MINOR    { background: var(--low-bg);  color: var(--low); }
+
+  .quotes-header {
+    margin: 0 0 8px;
+    font-size: 0.82em;
+    font-weight: 600;
+    color: var(--text-sub);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .quotes-header .help {
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--text-sub);
+    margin-left: 6px;
+  }
+
+  .quotes { margin: 0 0 16px; padding: 0; list-style: none; }
+  .quotes li {
+    padding: 10px 14px; margin-bottom: 8px;
+    background: var(--quote-bg); border-radius: 6px;
+    font-size: 0.95em;
+    border-left: 3px solid var(--mid);
+  }
+  .quotes li .reviewer-tag {
+    display: inline-block; font-size: 0.8em;
+    color: var(--text-sub); font-weight: 700;
+    margin-left: 8px; padding: 2px 8px;
+    background: var(--bg); border-radius: 4px;
+  }
+  .quotes li mark {
+    background: transparent; color: var(--text);
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-color: var(--mid);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 2px;
+  }
+
+  /* Reasoning은 glance(접힘 상태에서도 보임)에 표시되므로 펼침 후 숨김 */
+  .reasoning { display: none; }
+
+  /* Low confidence list */
+  .low-list { padding: 0; margin: 0; list-style: none; }
+  .low-list li {
+    padding: 10px 14px; margin-bottom: 6px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-left: 3px solid var(--low);
+    border-radius: 6px; font-size: 0.95em;
+  }
+  .low-list li .iss-id {
+    font-family: ui-monospace, monospace; font-size: 0.85em;
+    color: var(--text-sub); margin-right: 10px;
+  }
+
+  /* Footer */
+  footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--text-sub); font-size: 0.85em; text-align: center; }
+  footer a { color: var(--text-sub); }
+
+  /* Hidden state for filter */
+  .issue.hidden { display: none; }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .container { padding: 20px 12px 60px; }
+    .header h1 { font-size: 1.4em; }
+    .summary-pill { padding: 8px 12px; font-size: 0.85em; }
+    .filter-bar { gap: 6px; }
+    .filter-btn {
+      padding: 10px 14px; font-size: 0.9em;
+      min-height: 44px;
+    }
+    .issue summary { padding: 14px 14px; gap: 10px; min-height: 44px; }
+    .issue-body { padding: 0 14px 14px; }
+    .reviewer-table th, .reviewer-table td { padding: 12px 10px; }
+  }
+
+  /* Print: 모두 펼쳐서 인쇄 (실제 펼침은 JS의 beforeprint에서 처리) */
+  @media print {
+    .filter-bar { display: none; }
+    .issue { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<a href="#filter-bar" class="skip-link">필터로 건너뛰기</a>
+<div class="container">
+
+  <header class="header">
+    <h1>📋 Consensus Review 결과</h1>
+    <div class="meta">
+      <strong>문서:</strong> {문서 이름}<br>
+      <strong>리뷰어:</strong> {N}명 독립 (Consensus Review 스킬)<br>
+      <strong>생성일:</strong> {YYYY-MM-DD HH:MM:SS}
+    </div>
+
+    <div class="summary">
+      <span class="summary-pill total">총 {총 개수}개</span>
+      <span class="summary-pill high">🔴 High {X}</span>
+      <span class="summary-pill mid">🟡 Mid {Y}</span>
+      <span class="summary-pill low">⚪ Low {Z}</span>
+    </div>
+
+    <details class="reviewer-stats">
+      <summary>리뷰어별 발견 수 자세히 보기</summary>
+      <table class="reviewer-table">
+        <caption class="sr-only">리뷰어별 결함 발견 수</caption>
+        <thead><tr><th>리뷰어</th><th>발견 결함 수</th></tr></thead>
+        <tbody>
+          <tr><td>Reviewer 1</td><td>{a}건</td></tr>
+          <tr><td>Reviewer 2</td><td>{b}건</td></tr>
+          <tr><td>Reviewer 3</td><td>{c}건</td></tr>
+        </tbody>
+      </table>
+    </details>
+  </header>
+
+  <!-- ============================================================
+       💡 TOP ACTIONS — 상단 요약형 권장 조치 (필터 위)
+       의사결정자가 스크롤 없이 "무엇부터 봐야 하는지" 파악.
+       - 3~5개 핵심 액션만. 각 항목 끝에 관련 ISS 번호를 괄호로 표기 (예: 🔴 ISS-1, ISS-3).
+       - 하단 #detailed-recommendations 섹션으로 점프하는 링크 포함.
+       - 🔴이 0개일 경우 박스 자체를 생략하거나 🟡 기준으로 작성.
+  ============================================================ -->
+  <aside class="top-actions" aria-labelledby="top-actions-heading">
+    <h2 id="top-actions-heading">💡 먼저 처리할 일 (Top Actions)</h2>
+    <ol>
+      <!-- {{TOP_ACTIONS_LOOP}} - 3~5개 핵심 액션. 각 액션은:
+           <li><strong>{한 줄 액션}</strong> — {간단한 이유 또는 묶인 ISS 번호}</li> -->
+      <li><strong>{핵심 액션 1}</strong> — {간단한 설명} (🔴 ISS-1).</li>
+      <li><strong>{핵심 액션 2}</strong> — {간단한 설명} (🔴 ISS-2, ISS-5).</li>
+      <li><strong>{핵심 액션 3}</strong> — {간단한 설명} (🔴 ISS-3).</li>
+    </ol>
+    <p class="more">상세 가이드는 페이지 하단 <a href="#detailed-recommendations">권장 조치 섹션</a>을 참고하세요.</p>
+  </aside>
+
+  <div class="filter-bar" role="toolbar" aria-label="이슈 필터" id="filter-bar">
+    <span class="filter-label" aria-hidden="true">필터</span>
+    <button class="filter-btn" data-filter="all" aria-pressed="true">전체</button>
+    <button class="filter-btn" data-filter="high" aria-pressed="false">🔴 High만</button>
+    <button class="filter-btn" data-filter="mid" aria-pressed="false">🟡 Mid만</button>
+    <button class="filter-btn" data-filter="low" aria-pressed="false">⚪ Low만</button>
+    <span class="sr-only" role="status" aria-live="polite" id="filter-status"></span>
+  </div>
+
+  <!-- ============================================================
+       🔴 HIGH CONFIDENCE — 전원 합의
+       각 이슈는 다음 구조의 <details class="issue severity-high"> 로 삽입.
+       시작 상태: open (기본 펼침)
+  ============================================================ -->
+  <section class="tier-section" data-tier="high">
+    <div class="tier-header">
+      <h2>🔴 High Confidence</h2>
+      <span class="count">— 전원 합의 ({X}개)</span>
+    </div>
+    <p class="desc">{N}명 전원이 지적한 이슈입니다. 우선 처리 대상.</p>
+
+    <!-- {{HIGH_ISSUES_LOOP}} - 각 이슈마다 아래 카드 반복.
+         카드 enrichment(▸ 마커, .glance 진단/검토/출처, 근거 헤더)는 페이지 하단 JS가 자동 수행하므로
+         서버측에선 reasoning과 quotes의 출처 괄호(`(Glossary)` 등)만 정확히 채우면 됩니다.
+         `open` 속성은 붙이지 마세요 (기본 접힘 상태로 시작). -->
+    <details class="issue severity-high" data-tier="high">
+      <summary>
+        <span class="iss-id">ISS-1</span>
+        <span class="iss-emoji">🔴</span>
+        <span class="iss-title">{제목 ≤12 단어}</span>
+      </summary>
+      <div class="issue-body">
+        <div class="issue-meta">
+          <span class="tag type">{Inconsistency / Omission / Ambiguity / Terminology / Structural}</span>
+          <span class="tag severity-CRITICAL">{CRITICAL}</span>
+          <span class="tag">Agents {count}/{N}</span>
+          <span class="tag">Confidence {median}/10 (R1: {x}, R2: {y}, R3: {z})</span>
+          <span class="tag">Evidence {median}/5</span>
+        </div>
+        <ul class="quotes">
+          <li>📍 "<mark>{exact quote}</mark>" ({출처 예: Glossary / Req 3, AC1})<span class="reviewer-tag">R1</span></li>
+          <li>📍 "<mark>{exact quote}</mark>" ({출처})<span class="reviewer-tag">R2</span></li>
+          <li>📍 "<mark>{exact quote}</mark>" ({출처})<span class="reviewer-tag">R3</span></li>
+        </ul>
+        <p class="reasoning">{≤40 words}</p>
+      </div>
+    </details>
+    <!-- /{{HIGH_ISSUES_LOOP}} -->
+  </section>
+
+  <!-- ============================================================
+       🟡 NEEDS REVIEW — 다수 합의
+       severity-mid / data-tier="mid", emoji 🟡
+  ============================================================ -->
+  <section class="tier-section" data-tier="mid">
+    <div class="tier-header">
+      <h2>🟡 Needs Review</h2>
+      <span class="count">— 다수 합의 ({Y}개)</span>
+    </div>
+    <p class="desc">2/{N}이 지적한 이슈. 검토 권장.</p>
+
+    <!-- {{MID_ISSUES_LOOP}} - 동일 구조, severity-mid -->
+  </section>
+
+  <!-- ============================================================
+       ⚪ LOW — 소수 지적 (콤팩트 리스트)
+  ============================================================ -->
+  <section class="tier-section" data-tier="low">
+    <div class="tier-header">
+      <h2>⚪ Low</h2>
+      <span class="count">— 소수 지적 ({Z}개)</span>
+    </div>
+    <p class="desc">1명만 지적. 환각 가능성이 상대적으로 큼.</p>
+
+    <ul class="low-list">
+      <!-- {{LOW_ISSUES_LOOP}} -->
+      <li><span class="iss-id">ISS-N</span><strong>{제목}</strong> — {한 줄 요약}</li>
+    </ul>
+  </section>
+
+  <!-- ============================================================
+       💡 권장 조치 (하단 상세) — 상단 .top-actions에서 #detailed-recommendations 앵커로 링크됨
+  ============================================================ -->
+  <section class="tier-section" id="detailed-recommendations">
+    <div class="tier-header">
+      <h2>💡 권장 조치</h2>
+    </div>
+    <ul>
+      <li>🔴부터 우선 검토하세요. {N}명 전원 합의라 진짜 결함일 확률이 높습니다.</li>
+      <li>시간 여유가 있으면 🟡까지. 다수 합의라 정밀도 중간 이상입니다.</li>
+      <li>⚪는 리소스 여유 시에만. 환각 가능성이 상대적으로 큽니다.</li>
+    </ul>
+  </section>
+
+  <footer>
+    Generated by <a href="https://github.com/NB3025/consensus-review" target="_blank" rel="noopener noreferrer">Consensus Review</a> · {N}=리뷰어 수 · 독립 LLM 병렬 호출 + Tier 집계
+  </footer>
+</div>
+
+<script>
+  // 필터 토글: aria-pressed로 활성 상태를 보조기술에 전달.
+  // 인쇄 시 모든 details 펼침 (CSS만으로 불가능하므로 JS 처리).
+  (function() {
+    const buttons = document.querySelectorAll('.filter-btn');
+    const sections = document.querySelectorAll('.tier-section');
+    const status = document.getElementById('filter-status');
+
+    const filterLabels = {
+      all: '전체 이슈',
+      high: 'High Confidence 이슈',
+      mid: 'Needs Review 이슈',
+      low: 'Low 이슈'
+    };
+
+    function countVisibleIssues(filter) {
+      let count = 0;
+      sections.forEach(s => {
+        const tier = s.dataset.tier;
+        if (!tier) return;
+        if (filter !== 'all' && filter !== tier) return;
+        count += s.querySelectorAll('.issue, .low-list li').length;
+      });
+      return count;
+    }
+
+    function applyFilter(filter) {
+      buttons.forEach(b => {
+        const isActive = b.dataset.filter === filter;
+        b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+      sections.forEach(s => {
+        const tier = s.dataset.tier;
+        if (!tier) return; // 권장 조치 섹션 등 tier 없는 섹션은 항상 표시
+        s.style.display = (filter !== 'all' && filter !== tier) ? 'none' : '';
+      });
+      if (status) {
+        const count = countVisibleIssues(filter);
+        status.textContent = `${filterLabels[filter]} ${count}개 표시 중`;
+      }
+    }
+
+    buttons.forEach(b => b.addEventListener('click', () => applyFilter(b.dataset.filter)));
+
+    // 초기 상태 동기화 + 라이브 리전 초기 텍스트
+    applyFilter('all');
+
+    // XSS 방어용 escape (LLM이 생성한 reasoning을 안전하게 합성)
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // Type별 검토 포인트 매핑 (LLM 개입 없이 패턴화). ko/en 양방향 키.
+    const TYPE_ACTIONS = {
+      'Inconsistency': '관련 두 지점을 비교하여 어느 쪽이 정인지 결정 필요',
+      '불일치':        '관련 두 지점을 비교하여 어느 쪽이 정인지 결정 필요',
+      'Omission':      '누락된 항목을 정의·스펙에 추가 필요',
+      '누락':          '누락된 항목을 정의·스펙에 추가 필요',
+      'Ambiguity':     '구체적 수치·조건을 결정하여 명시 필요',
+      '모호':          '구체적 수치·조건을 결정하여 명시 필요',
+      '모호성':        '구체적 수치·조건을 결정하여 명시 필요',
+      'Terminology':   '용어를 통일하거나 Glossary에 정의 추가 필요',
+      '용어':          '용어를 통일하거나 Glossary에 정의 추가 필요',
+      'Structural':    '위치·카테고리를 재분류하거나 섹션 이동 필요',
+      '구조':          '위치·카테고리를 재분류하거나 섹션 이동 필요'
+    };
+
+    // 모든 .issue 카드를 enrich:
+    // 1. summary 끝에 ▸ 마커 span 추가 (CSS grid 정렬용)
+    // 2. details 안에 .glance 형제 추가 (summary 외부, 카드 접힘/펼침 상관없이 항상 보임)
+    // 3. quotes 위에 "근거 인용 N건" 헤더 추가
+    document.querySelectorAll('.issue').forEach(issue => {
+      const summary = issue.querySelector('summary');
+      const body = issue.querySelector('.issue-body');
+      if (!summary || !body) return;
+
+      const reasoningEl = body.querySelector('.reasoning');
+      const typeTag = body.querySelector('.tag.type');
+      const quotes = body.querySelector('.quotes');
+      const quoteCount = quotes ? quotes.querySelectorAll('li').length : 0;
+
+      // 1. marker span (없으면 추가)
+      if (!summary.querySelector('.marker')) {
+        const marker = document.createElement('span');
+        marker.className = 'marker';
+        marker.setAttribute('aria-hidden', 'true');
+        marker.textContent = '▸';
+        summary.appendChild(marker);
+      }
+
+      // quotes에서 출처 추출 (라인 끝 괄호 패턴)
+      // 예: "...어쩌구..." (Glossary)        → Glossary
+      //     "...저쩌구..." (Req 3, AC1)<...> → Req 3, AC1
+      const sources = [];
+      if (quotes) {
+        quotes.querySelectorAll('li').forEach(li => {
+          // reviewer-tag span을 제외한 본문에서만 추출
+          const clone = li.cloneNode(true);
+          clone.querySelectorAll('.reviewer-tag').forEach(t => t.remove());
+          const text = clone.textContent;
+          const match = text.match(/\(([^()]+)\)\s*$/);
+          if (match) {
+            const src = match[1].trim();
+            if (src && !sources.includes(src)) sources.push(src);
+          }
+        });
+      }
+
+      // 2. glance를 details 안의 summary 형제로 삽입 (summary 시맨틱 위반 방지)
+      if (!issue.querySelector(':scope > .glance') && (reasoningEl || typeTag || sources.length)) {
+        const glance = document.createElement('div');
+        glance.className = 'glance';
+
+        if (reasoningEl) {
+          const diagnose = document.createElement('div');
+          diagnose.className = 'diagnose';
+          const labelSpan = document.createElement('span');
+          labelSpan.className = 'label';
+          labelSpan.textContent = '🔍 진단';
+          const contentSpan = document.createElement('span');
+          // reasoning의 자식 노드들을 옮김 (텍스트 + 인라인 마크업 모두 보존)
+          Array.from(reasoningEl.childNodes).forEach(node => {
+            contentSpan.appendChild(node.cloneNode(true));
+          });
+          diagnose.appendChild(labelSpan);
+          diagnose.appendChild(contentSpan);
+          glance.appendChild(diagnose);
+        }
+
+        const typeText = typeTag ? typeTag.textContent.trim() : '';
+        const action = TYPE_ACTIONS[typeText];
+        if (action) {
+          const actionEl = document.createElement('div');
+          actionEl.className = 'action';
+          const labelSpan = document.createElement('span');
+          labelSpan.className = 'label';
+          labelSpan.textContent = '👉 검토';
+          const contentSpan = document.createElement('span');
+          contentSpan.textContent = action;
+          if (quoteCount > 0) {
+            const ec = document.createElement('span');
+            ec.className = 'evidence-count';
+            ec.textContent = ` · 근거 ${quoteCount}건`;
+            contentSpan.appendChild(ec);
+          }
+          actionEl.appendChild(labelSpan);
+          actionEl.appendChild(contentSpan);
+          glance.appendChild(actionEl);
+        }
+
+        if (sources.length) {
+          const sourceEl = document.createElement('div');
+          sourceEl.className = 'source';
+          const labelSpan = document.createElement('span');
+          labelSpan.className = 'label';
+          labelSpan.textContent = '📍 출처';
+          const listSpan = document.createElement('span');
+          listSpan.className = 'source-list';
+          listSpan.textContent = sources.join(' · ');
+          sourceEl.appendChild(labelSpan);
+          sourceEl.appendChild(listSpan);
+          glance.appendChild(sourceEl);
+        }
+
+        // summary 다음에 형제로 삽입
+        summary.insertAdjacentElement('afterend', glance);
+      }
+
+      // 3. quotes 위에 헤더 (있으면 스킵)
+      if (quotes && quoteCount > 0 && !body.querySelector('.quotes-header')) {
+        const header = document.createElement('p');
+        header.className = 'quotes-header';
+        header.innerHTML = `근거 인용 ${escapeHtml(String(quoteCount))}건 <span class="help">— 같은 root cause를 입증</span>`;
+        quotes.parentNode.insertBefore(header, quotes);
+      }
+    });
+
+    // 인쇄 시 모든 details 펼침, 인쇄 후 원상 복원
+    const detailsElements = document.querySelectorAll('details');
+    const printOpenState = new WeakMap();
+    window.addEventListener('beforeprint', () => {
+      detailsElements.forEach(d => {
+        printOpenState.set(d, d.open);
+        d.open = true;
+      });
+    });
+    window.addEventListener('afterprint', () => {
+      detailsElements.forEach(d => {
+        if (printOpenState.has(d)) d.open = printOpenState.get(d);
+      });
+    });
+  })();
+</script>
+</body>
+</html>

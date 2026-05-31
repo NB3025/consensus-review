@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📋 Consensus Review — SKILL.md</title>
+<style>
+  :root {
+    --bg: #fafaf9;
+    --bg-card: #ffffff;
+    --text: #1c1917;
+    --text-sub: #57534e;
+    --border: #e7e5e4;
+    --high: #dc2626;
+    --high-bg: #fef2f2;
+    --mid: #b45309;
+    --mid-bg: #fffbeb;
+    --low: #6b7280;
+    --low-bg: #f9fafb;
+    --quote-bg: #fef3c7;
+    --code-bg: #f3f4f6;
+    --focus-ring: var(--text);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c0a09;
+      --bg-card: #1c1917;
+      --text: #fafaf9;
+      --text-sub: #a8a29e;
+      --border: #292524;
+      --high: #f87171;
+      --high-bg: #450a0a;
+      --mid: #fbbf24;
+      --mid-bg: #451a03;
+      --low: #9ca3af;
+      --low-bg: #1f2937;
+      --quote-bg: #3a1d05;
+      --code-bg: #292524;
+      --focus-ring: var(--text);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .skip-link {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    padding: 8px 14px;
+    background: var(--bg-card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-weight: 700;
+    text-decoration: none;
+    z-index: 100;
+    transform: translateY(-200%);
+    transition: transform 0.15s;
+  }
+  .skip-link:focus {
+    transform: translateY(0);
+  }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 16px;
+  }
+  .container { max-width: 920px; margin: 0 auto; padding: 32px 20px 80px; }
+
+  .header { border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 32px; }
+  .header h1 { font-size: 1.8em; margin: 0 0 8px; font-weight: 800; }
+  .header .meta { color: var(--text-sub); font-size: 0.95em; }
+  .header .meta strong { color: var(--text); }
+
+  .summary {
+    display: flex; gap: 12px; flex-wrap: wrap;
+    margin: 24px 0;
+  }
+  .summary-pill {
+    padding: 10px 18px; border-radius: 999px; font-weight: 700; font-size: 0.95em;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .summary-pill.high { background: var(--high-bg); color: var(--high); border: 1px solid var(--high); }
+  .summary-pill.mid  { background: var(--mid-bg);  color: var(--mid);  border: 1px solid var(--mid); }
+  .summary-pill.low  { background: var(--low-bg);  color: var(--low);  border: 1px solid var(--low); }
+  .summary-pill.total { background: var(--bg-card); color: var(--text); border: 1px solid var(--border); }
+
+  .reviewer-stats {
+    margin-bottom: 32px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-card);
+  }
+  .reviewer-stats summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 12px 16px;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: var(--text-sub);
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .reviewer-stats summary::-webkit-details-marker { display: none; }
+  .reviewer-stats summary::after {
+    content: "▸";
+    margin-left: auto;
+    transition: transform 0.2s;
+  }
+  .reviewer-stats[open] summary::after { transform: rotate(90deg); }
+  .reviewer-stats summary:hover { background: var(--code-bg); border-radius: 8px 8px 0 0; }
+
+  .reviewer-table { width: 100%; border-collapse: collapse; }
+  .reviewer-table th, .reviewer-table td {
+    padding: 10px 16px; text-align: left;
+    border-top: 1px solid var(--border);
+    font-size: 0.95em;
+  }
+  .reviewer-table th { background: var(--bg); font-weight: 700; color: var(--text-sub); }
+  .reviewer-table td:last-child { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+
+  .filter-bar {
+    display: flex; gap: 8px; flex-wrap: wrap;
+    margin: 32px 0 16px;
+    padding: 12px; border-radius: 8px; background: var(--bg-card); border: 1px solid var(--border);
+  }
+  .filter-bar .filter-label {
+    font-size: 0.85em; color: var(--text-sub); align-self: center; margin-right: 8px;
+    font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .filter-btn {
+    padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--text); cursor: pointer; font-size: 0.9em;
+    font-family: inherit; font-weight: 600; transition: all 0.15s;
+    min-height: 36px;
+  }
+  .filter-btn:hover { background: var(--code-bg); }
+  .filter-btn[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+  .tier-section { margin: 40px 0 16px; }
+  .tier-header {
+    display: flex; align-items: baseline; gap: 12px;
+    margin-bottom: 8px;
+  }
+  .tier-header h2 { margin: 0; font-size: 1.3em; font-weight: 800; }
+  .tier-header .count { color: var(--text-sub); font-weight: 600; font-size: 0.95em; }
+  .tier-section .desc { color: var(--text-sub); font-size: 0.9em; margin: 0 0 16px; }
+
+  .top-actions {
+    margin: 28px 0 8px;
+    padding: 18px 22px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--high);
+    border-radius: 8px;
+  }
+  .top-actions h2 {
+    margin: 0 0 12px;
+    font-size: 1.05em;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .top-actions ol {
+    margin: 0;
+    padding-left: 22px;
+    color: var(--text);
+    font-size: 0.95em;
+    line-height: 1.6;
+  }
+  .top-actions ol li { margin-bottom: 6px; }
+  .top-actions ol li:last-child { margin-bottom: 0; }
+  .top-actions .more {
+    margin-top: 10px;
+    font-size: 0.85em;
+    color: var(--text-sub);
+  }
+  .top-actions .more a { color: var(--text-sub); }
+
+  .issue {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--low);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .issue.severity-high { border-left-color: var(--high); }
+  .issue.severity-mid  { border-left-color: var(--mid); }
+  .issue.severity-low  { border-left-color: var(--low); }
+
+  .issue summary {
+    list-style: none;
+    padding: 16px 20px;
+    cursor: pointer;
+    display: grid;
+    grid-template-columns: auto auto 1fr auto;
+    align-items: center;
+    gap: 14px;
+    user-select: none;
+  }
+  .issue summary::-webkit-details-marker { display: none; }
+  .issue summary:hover { background: var(--code-bg); }
+  .issue summary .marker {
+    color: var(--text-sub);
+    transition: transform 0.2s;
+  }
+  .issue[open] summary .marker { transform: rotate(90deg); }
+
+  .issue .iss-id {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 0.85em; padding: 3px 8px; border-radius: 4px;
+    background: var(--code-bg); color: var(--text-sub);
+    flex-shrink: 0;
+  }
+  .issue .iss-title { font-weight: 700; }
+  .issue.severity-high .iss-emoji { color: var(--high); }
+  .issue.severity-mid  .iss-emoji { color: var(--mid); }
+  .issue.severity-low  .iss-emoji { color: var(--low); }
+
+  .issue > .glance {
+    display: grid;
+    gap: 8px;
+    padding: 0 20px 16px;
+    font-size: 0.96em;
+    color: var(--text);
+    line-height: 1.55;
+    user-select: text;
+  }
+  .issue > .glance .diagnose,
+  .issue > .glance .action,
+  .issue > .glance .source {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px;
+  }
+  .issue > .glance .label {
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+    min-width: 60px;
+  }
+  .issue > .glance .source-list {
+    color: var(--text-sub);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 0.9em;
+  }
+  .issue > .glance .evidence-count {
+    color: var(--text-sub);
+    font-size: 0.9em;
+    margin-left: 6px;
+    font-weight: 500;
+  }
+  .issue[open] > .glance {
+    border-bottom: 1px dashed var(--border);
+    margin-bottom: 16px;
+  }
+
+  .issue-body { padding: 0 20px 20px; }
+  .issue-meta {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .issue-meta .tag {
+    padding: 4px 10px; border-radius: 4px;
+    background: var(--code-bg); color: var(--text-sub);
+    font-size: 0.82em; font-weight: 600;
+  }
+  .issue-meta .tag.type { background: var(--low-bg); color: var(--text); }
+  .issue-meta .tag.severity-CRITICAL { background: var(--high-bg); color: var(--high); }
+  .issue-meta .tag.severity-MAJOR    { background: var(--mid-bg);  color: var(--mid); }
+  .issue-meta .tag.severity-MINOR    { background: var(--low-bg);  color: var(--low); }
+
+  .quotes-header {
+    margin: 0 0 8px;
+    font-size: 0.82em;
+    font-weight: 600;
+    color: var(--text-sub);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .quotes-header .help {
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--text-sub);
+    margin-left: 6px;
+  }
+
+  .quotes { margin: 0 0 16px; padding: 0; list-style: none; }
+  .quotes li {
+    padding: 10px 14px; margin-bottom: 8px;
+    background: var(--quote-bg); border-radius: 6px;
+    font-size: 0.95em;
+    border-left: 3px solid var(--mid);
+  }
+  .quotes li .reviewer-tag {
+    display: inline-block; font-size: 0.8em;
+    color: var(--text-sub); font-weight: 700;
+    margin-left: 8px; padding: 2px 8px;
+    background: var(--bg); border-radius: 4px;
+  }
+  .quotes li mark {
+    background: transparent; color: var(--text);
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-color: var(--mid);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 2px;
+  }
+
+  .reasoning { display: none; }
+
+  .low-list { padding: 0; margin: 0; list-style: none; }
+  .low-list li {
+    padding: 10px 14px; margin-bottom: 6px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-left: 3px solid var(--low);
+    border-radius: 6px; font-size: 0.95em;
+  }
+  .low-list li .iss-id {
+    font-family: ui-monospace, monospace; font-size: 0.85em;
+    color: var(--text-sub); margin-right: 10px;
+  }
+
+  footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--text-sub); font-size: 0.85em; text-align: center; }
+  footer a { color: var(--text-sub); }
+
+  .issue.hidden { display: none; }
+
+  @media (max-width: 600px) {
+    .container { padding: 20px 12px 60px; }
+    .header h1 { font-size: 1.4em; }
+    .summary-pill { padding: 8px 12px; font-size: 0.85em; }
+    .filter-bar { gap: 6px; }
+    .filter-btn {
+      padding: 10px 14px; font-size: 0.9em;
+      min-height: 44px;
+    }
+    .issue summary { padding: 14px 14px; gap: 10px; min-height: 44px; }
+    .issue-body { padding: 0 14px 14px; }
+    .reviewer-table th, .reviewer-table td { padding: 12px 10px; }
+  }
+
+  @media print {
+    .filter-bar { display: none; }
+    .issue { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<a href="#filter-bar" class="skip-link">필터로 건너뛰기</a>
+<div class="container">
+
+  <header class="header">
+    <h1>📋 Consensus Review 결과</h1>
+    <div class="meta">
+      <strong>문서:</strong> SKILL.md (consensus-review 스킬 정의)<br>
+      <strong>경로:</strong> ./SKILL.md<br>
+      <strong>리뷰어:</strong> 3명 독립 (Consensus Review 스킬)<br>
+      <strong>생성일:</strong> 2026-05-12 11:57:36
+    </div>
+
+    <div class="summary">
+      <span class="summary-pill total">총 24개</span>
+      <span class="summary-pill high">🔴 High 7</span>
+      <span class="summary-pill mid">🟡 Mid 11</span>
+      <span class="summary-pill low">⚪ Low 6</span>
+    </div>
+
+    <details class="reviewer-stats">
+      <summary>리뷰어별 발견 수 자세히 보기</summary>
+      <table class="reviewer-table">
+        <caption class="sr-only">리뷰어별 결함 발견 수</caption>
+        <thead><tr><th>리뷰어</th><th>발견 결함 수</th></tr></thead>
+        <tbody>
+          <tr><td>Reviewer 1</td><td>30건</td></tr>
+          <tr><td>Reviewer 2</td><td>36건</td></tr>
+          <tr><td>Reviewer 3</td><td>30건</td></tr>
+          <tr><td><strong>병합 후 통합</strong></td><td><strong>24건</strong></td></tr>
+        </tbody>
+      </table>
+    </details>
+  </header>
+
+  <aside class="top-actions" aria-labelledby="top-actions-heading">
+    <h2 id="top-actions-heading">💡 먼저 처리할 일 (Top Actions)</h2>
+    <ol>
+      <li><strong>도구명 표기 통일</strong> — <code>write_file/Write/write</code>, <code>read_file/Read</code> 혼용을 Claude Code 실제 도구명(<code>Write</code>/<code>Read</code>)으로 통일 (🔴 ISS-1).</li>
+      <li><strong>doc_type_hint 키워드/값 매핑 정의</strong> — Step 1 영문 키워드(prd/spec/requirements/nda/rfc/architecture)와 Step 2-3 허용 값(사업계획서/기능정의서/구현계획서/architecture/general)의 매핑 테이블 추가 (🔴 ISS-2).</li>
+      <li><strong>Tier 분류 규칙을 SKILL.md에 명시</strong> — 🔴/🟡/⚪ 결정 임계치(N/N, ceil(N/2)/N, 그 외)를 본문에 직접 정의하여 aggregate.md 외부 의존 제거 (🔴 ISS-3).</li>
+      <li><strong>측정 기준 3종 정의</strong> — 토큰 카운트(어떤 tokenizer), 인라인 임계치(500단어 OR/AND 2KB), 한글 50% 분모(전체/공백제외/자모) (🔴 ISS-4, ISS-5, ISS-6).</li>
+      <li><strong>외부 파일 의존성 명시</strong> — review.md, aggregate.md, output_template.md/html의 위치/필수 여부/누락 시 동작을 본문에 추가 (🔴 ISS-7).</li>
+    </ol>
+    <p class="more">상세 가이드는 페이지 하단 <a href="#detailed-recommendations">권장 조치 섹션</a>을 참고하세요.</p>
+  </aside>
+
+  <div class="filter-bar" role="toolbar" aria-label="이슈 필터" id="filter-bar">
+    <span class="filter-label" aria-hidden="true">필터</span>
+    <button class="filter-btn" data-filter="all" aria-pressed="true">전체</button>
+    <button class="filter-btn" data-filter="high" aria-pressed="false">🔴 High만</button>
+    <button class="filter-btn" data-filter="mid" aria-pressed="false">🟡 Mid만</button>
+    <button class="filter-btn" data-filter="low" aria-pressed="false">⚪ Low만</button>
+    <span class="sr-only" role="status" aria-live="polite" id="filter-status"></span>
+  </div>
+
+  <section class="tier-section" data-tier="high">
+    <div class="tier-header">
+      <h2>🔴 High Confidence</h2>
+      <span class="count">— 전원 합의 (7개)</span>
+    </div>
+    <p class="desc">3명 전원이 지적한 이슈입니다. 우선 처리 대상.</p>
+
+    <details class="issue severity-high" data-tier="high">
+      <summary>
+        <span class="iss-id">ISS-1</span>
+        <span class="iss-emoji">🔴</span>
+        <span class="iss-title">도구명 표기 불일치 (write_file/Write/write, read_file/Read)</span>
+      </summary>
+      <div class="issue-body">
+        <div class="issue-meta">
+          <span class="tag type">Terminology</span>
+          <span class="tag severity-MAJOR">MAJOR</span>
+          <span class="tag">Agents 3/3</span>
+          <span class="tag">Confidence 9/10 (R1: 8, R2: 9, R3: 10)</span>
+          <span class="tag">Evidence 5/5</span>
+        </div>
+        <ul class="quotes">
+          <li>📍 "<mark>서브에이전트는 리뷰 결과를 **파일로 저장** (`write_file` 또는 `Write`)</mark>" (Step 2-2)<span class="reviewer-tag">R1</span></li>
+          <li>📍 "<mark>이 단계에서 `write` 툴을 호출합니다.</mark>" (Step 4a)<span class="reviewer-tag">R1</span></li>
+          <li>📍 "<mark>Main은 **파일을 직접 `read_file`** — 문자 그대로 읽음, 요약 개입 없음</mark>" (Step 2-2)<span class="reviewer-tag">R2</span></li>
+          <li>📍 "<mark>서브에이전트가 `read_file` (또는 `Read`) 도구로 직접 파일을 읽습니다.</mark>" (Step 2-6)<span class="reviewer-tag">R2</span></li>
+          <li>📍 "<mark>결과 전체를 `{output_path}`에 `write_file`로 저장.</mark>" (Step 2-4)<span class="reviewer-tag">R3</span></li>
+        </ul>
+        <p class="reasoning">동일 도구를 write_file/Write/write·read_file/Read로 혼용. Claude Code 실제 도구명은 Write/Read이므로 표기를 통일해야 한다. 3명 전원 지적 — 동일 root cause.</p>
+      </div>
+    </details>
+
+    <details class="issue severity-high" data-tier="high">
+      <summary>
+        <span class="iss-id">ISS-2</span>
+        <span class="iss-emoji">🔴</span>
+        <span class="iss-title">doc_type_hint 옵션 목록 불일치 — Step 1 vs Step 2-3</span>
+      </summary>
+      <div class="issue-body">
+        <div class="issue-meta">
+          <span class="tag type">Inconsistency</span>
+          <span class="tag severity-MAJOR">MAJOR</span>
+          <span class="tag">Agents 3/3</span>
+          <span class="tag">Confidence 9/10 (R1: 9, R2: 8, R3: 8)</span>
+          <span class="tag">Evidence 5/5</span>
+        </div>
+        <ul class="quotes">
+          <li>📍 "<mark>`{doc_type_hint}`: 파일명에 `prd|spec|requirements|nda|rfc|architecture` 매치 또는 본문 첫 200자에서 직접 매치되는 키워드 → 해당 유형. 매치 없으면 \"general\".</mark>" (Step 1)<span class="reviewer-tag">R1·R2·R3</span></li>
+          <li>📍 "<mark>`{doc_type_hint}` ← \"사업계획서\", \"기능정의서\", \"구현계획서\", \"architecture\", \"general\" 중 하나</mark>" (Step 2-3)<span class="reviewer-tag">R1·R2·R3</span></li>
+          <li>📍 "<mark>**예시**: `requirements.md` → \"requirements\"; 본문에 \"1조(목적)\", \"비밀유지\" → \"NDA\".</mark>" (Step 1)<span class="reviewer-tag">R3</span></li>
+        </ul>
+        <p class="reasoning">Step 1은 영문 키워드 6개로 매칭하고, Step 2-3은 한국어 3개+architecture+general을 허용 값으로 제시. 두 목록의 매핑 규칙(prd→무엇?)이 누락되어 어떤 값이 전달되는지 결정 불가.</p>
+      </div>
+    </details>
+
+    <details class="issue severity-high" data-tier="high">
+      <summary>
+        <span class="iss-id">ISS-3</span>
+        <span class="iss-emoji">🔴</span>
+        <span class="iss-title">Tier 결정 규칙 SKILL.md에 부재 — aggregate.md에 외부화</span>
+      </summary>
+      <div class="issue-body">
+        <div class="issue-meta">
+          <span class="tag type">Omission</span>
+          <span class="tag severity-CRITICAL">CRITICAL</span>
+          <span class="tag">Agents 3/3</span>
+          <span class="tag">Confidence 9/10 (R1: 7, R2: 9, R3: 8)</span>
+          <span class="tag">Evidence 5/5</span>
+        </div>
+        <ul class="quotes">
+          <li>📍 "<mark>N명의 독립 서브에이전트 리뷰어를 병렬 실행해 문서 결함을 탐지하고 🔴/🟡/⚪ Tier로 분류합니다.</mark>" (개요)<span class="reviewer-tag">R2·R3</span></li>
+          <li>📍 "<mark>집계 결과는 🔴/🟡/⚪ Tier가 붙은 ISS-1, ISS-2 … 형태의 통합 목록입니다.</mark>" (Step 3-3)<span class="reviewer-tag">R2·R3</span></li>
+          <li>📍 "<mark>🔴 high / 🟡 medium / ⚪ low</mark>" (frontmatter description)<span class="reviewer-tag">R3</span></li>
+          <li>📍 "<mark>위반 시 이 스킬의 핵심 효과(확률적 커버리지로 +6.5~30.6%p 재현율 향상)가 사라집니다.</mark>" (Step 2)<span class="reviewer-tag">R1</span></li>
+        </ul>
+        <p class="reasoning">스킬의 핵심 결과물인 Tier 분류(N/N=🔴, ≥ceil(N/2)=🟡)가 SKILL.md에 정의되지 않고 aggregate.md에 외부화. SKILL.md만으로는 동작 예측이 불가능하고 N=2/N=5 변경 시 임계치 도출 불명확.</p>
+      </div>
+    </details>
+
+    <details class="issue severity-high" data-tier="high">
+      <summary>
+        <span class="iss-id">ISS-4</span>
+        <span class="iss-emoji">🔴</span>
+        <span class="iss-title">60K 토큰 한계와 200K context 요구치 정합성 결여 + 측정 방법 누락</span>
+      </summary>
+      <div class="issue-body">
+        <div class="issue-meta">
+          <span class="tag type">Inconsistency</span>
+          <span class="tag severity-MAJOR">MAJOR</span>
+          <span class="tag">Agents 3/3</span>
+          <span class="tag">Confidence 8/10 (R1: 8, R2: 8/9, R3: 6)</span>
+          <span class="tag">Evidence 5/5</span>
+        </div>
+        <ul class="quotes">
+          <li>📍 "<mark>최소 요구치: context window ≥ 200K. 그 미만 모델이 감지되면 사용자에게 알리고 중단.</mark>" (Step 2-7)<span class="reviewer-tag">R1·R2·R3</span></li>
+          <li>📍 "<mark>**문서 > 60K 토큰**: 청크 분할은 아직 미구현. 사용자에게 알리고 중단</mark>" (Step 2-8)<span class="reviewer-tag">R1·R2·R3</span></li>
+          <li>📍 "<mark>문서가 60K 토큰을 초과합니다(X 토큰). 현재 버전은 청크 분할을 지원하지 않습니다.</mark>" (Step 2-8)<span class="reviewer-tag">R1·R2</span></li>
+        </ul>
+        <p class="reasoning">200K context 요구하면서 60K로 차단하는 근거 미설명. 또한 토큰 측정 방법(어떤 tokenizer, 모델별 차이)이 정의되지 않아 사용자가 "X 토큰"을 알 수 없음. R1·R2·R3 동일 root cause(임계치 정합성+측정 미정의).</p>
+      </div>
+    </details>
+
+    <details class="issue severity-high" data-tier="high">
+      <summary>
+        <span class="iss-id">ISS-5</span>
+        <span class="iss-emoji">🔴</span>
+        <span class="iss-title">인라인 텍스트 임계값 측정 기준(500단어/2KB) 미정의</span>
+      </summary>
+      <div class="issue-body">
+        <div class="issue-meta">
+          <span class="tag type">Ambiguity</span>
+          <span class="tag severity-MAJOR">MAJOR</span>
+          <span class="tag">Agents 3/3</span>
+          <span class="tag">Confidence 8/10 (R1: 7, R2: 9, R3: 7)</span>
+          <span class="tag">Evidence 5/5</span>
+        </div>
+        <ul class="quotes">
+          <li>📍 "<mark>인라인 텍스트면 500 단어 / 2KB 미만일 때만 그대로, 초과 시</mark>" (Step 1)<span class="reviewer-tag">R1·R2·R3</span></li>
+          <li>📍 "<mark>**AND** 문서가 500 단어 / 2KB **미만**일 때.</mark>" (Step 2-6)<span class="reviewer-tag">R1·R2</span></li>
+          <li>📍 "<mark>NOT for: simple typo/grammar fixes, translation proofreading, documents under 500 words</mark>" (frontmatter description)<span class="reviewer-tag">R3</span></li>
+        </ul>
+        <p class="reasoning">"500 단어 / 2KB"가 OR/AND인지 명시되지 않고 한글 단어 카운트 기준(공백 분리/토큰)도 미정의. description은 500 단어 미만은 적용 대상 아니라고 하면서 Step 1은 그 미만 인라인을 그대로 처리하는 분기 제공해 충돌.</p>
+      </div>
+    </details>
+
+    <details class="issue severity-high" data-tier="high">
+      <summary>
+        <span class="iss-id">ISS-6</span>
+        <span class="iss-emoji">🔴</span>
+        <span class="iss-title">외부 파일 의존성 명시 부재 (aggregate.md, output_template.md/html, review.md)</span>
+      </summary>
+      <div class="issue-body">
+        <div class="issue-meta">
+          <span class="tag type">Omission</span>
+          <span class="tag severity-MAJOR">MAJOR</span>
+          <span class="tag">Agents 3/3</span>
+          <span class="tag">Confidence 8/10 (R1: 7, R2: 8, R3: 8)</span>
+          <span class="tag">Evidence 5/5</span>
+        </div>
+        <ul class="quotes">
+          <li>📍 "<mark>`examples/output_template.md`의 형식으로 최종 Markdown 리포트를 생성합니다.</mark>" (Step 4)<span class="reviewer-tag">R1·R3</span></li>
+          <li>📍 "<mark>`prompts/aggregate.md` 프롬프트에 다음 변수 치환</mark>" (Step 3-3)<span class="reviewer-tag">R1·R2·R3</span></li>
+          <li>📍 "<mark>`examples/output_template.html`을 베이스로 .html 파일을 생성하세요.</mark>" (Step 4)<span class="reviewer-tag">R3</span></li>
+          <li>📍 "<mark>자세한 분기 규칙은 `examples/output_template.md`의 **C 섹션**을 참고.</mark>" (Step 4)<span class="reviewer-tag">R2·R3</span></li>
+          <li>📍 "<mark>#### 2-4. 서브에이전트가 반드시 따라야 할 것 (review.md에도 명시)</mark>" (Step 2-4 헤더)<span class="reviewer-tag">R2·R3</span></li>
+        </ul>
+        <p class="reasoning">SKILL.md가 다수 외부 파일에 의존하지만 위치 규약/존재 보장/누락 시 동작이 명시되지 않음. 외부 파일 변경/누락 시 스킬이 깨지며 무결성 검증 불가.</p>
+      </div>
+    </details>
+
+    <details class="issue severity-high" data-tier="high">
+      <summary>
+        <span class="iss-id">ISS-7</span>
+        <span class="iss-emoji">🔴</span>
+        <span class="iss-title">"+6.5~30.6%p 재현율 향상" 벤치마크 출처/조건 누락</span>
+      </summary>
+      <div class="issue-body">
+        <div class="issue-meta">
+          <span class="tag type">Omission</span>
+          <span class="tag severity-MINOR">MINOR</span>
+          <span class="tag">Agents 3/3</span>
+          <span class="tag">Confidence 7/10 (R1: 7, R2: 8, R3: 6)</span>
+          <span class="tag">Evidence 4/5</span>
+        </div>
+        <ul class="quotes">
+          <li>📍 "<mark>위반 시 이 스킬의 핵심 효과(확률적 커버리지로 +6.5~30.6%p 재현율 향상)가 사라집니다.</mark>" (Step 2)<span class="reviewer-tag">R1·R2·R3</span></li>
+          <li>📍 "<mark>벤치마크(6 LLM × 3 benchmark) 기준 temperature=0.7~1.0 구간에서 재현율이 단조 증가.</mark>" (Step 2-7)<span class="reviewer-tag">R1·R2·R3</span></li>
+        </ul>
+        <p class="reasoning">+6.5~30.6%p와 6 LLM × 3 benchmark의 측정 조건(N, 모델, 데이터셋, 비교 기준)이 본문에 정의되지 않아 사용자가 결과를 검증/조정 불가. 두 곳에서 인용되지만 출처 링크 없음.</p>
+      </div>
+    </details>
+
+  </section>
+
+  <section class="tier-section" data-tier="mid">
+    <div class="tier-header">
+      <h2>🟡 Needs Review</h2>
+      <span class="count">— 다수 합의 (11개)</span>
+    </div>
+    <p class="desc">2/3이 지적한 이슈. 검토 권장.</p>
+
+    <details class="issue severity-mid" data-tier="mid">
+      <summary>
+        <span class="iss-id">ISS-8</span>
+        <span class="iss-emoji">🟡</span>
+        <span class="iss-title">SESSION_ID 4자 난수의 문자 집합 정의 누락</span>
+      </summary>
+      <div class="issue-body">
+        <div class="issue-meta">
+          <span class="tag type">Ambiguity</span>
+          <span class="tag severity-MINOR">MINOR</span>
+          <span class="tag">Agents 2/3</span>
+          <span class="tag">Confidence 8/10 (R1: 7, R3: 9)</span>
+          <span class="tag">Evidence 4/5</span>
+        </div>
+        <ul class="quotes">
+          <li>📍 "<mark>`SESSION_ID` 생성: `{YYYYMMDD-HHMMSS}-{4자 난수}` 형태. 예: `20260428-022810-a3f7`</mark>" (Step 2-1)<span class="reviewer-tag">R1·R3</span></li>
+          <li>📍 "<mark>예: `{PROJECT_DIR}/.consensus-review-output/20260428-022810-a3f7/reviewer-1.md`</mark>" (Step 2-3)<span class="reviewer-tag">R1·R3</span></li>
+        </ul>
+        <p class="reasoning">4자 난수의 문자 집합(16진수만 vs 영숫자, 대소문자 허용 여부)이 정의되지 않아 구현체가 다른 형식 생성 가능. 충돌 확률 보장도 불명확.</p>
+      </div>
+    </details>
+
+    <details class="issue severity-mid" data-tier="mid">
+      <summary>
+        <span class="iss-id">ISS-9</span>
+        <span class="iss-emoji">🟡</span>
+        <span class="iss-title">temperature 0.3 미만 금지 — 측정 범위 외 + 구현 주체 불명확</span>
+      </summary>
+      <div class="issue-body">
+        <div class="issue-meta">
+          <span class="tag type">Ambiguity</span>
+          <span class="tag severity-MINOR">MINOR</span>
+          <span class="tag">Agents 3/3</span>
+          <span class="tag">Confidence 7/10 (R1: 7, R2: 7, R3: 7)</span>
+          <span class="tag">Evidence 3/5</span>
+        </div>
+        <ul class="quotes">
+          <li>📍 "<mark>벤치마크(6 LLM × 3 benchmark) 기준 temperature=0.7~1.0 구간에서 재현율이 단조 증가.</mark>" (Step 2-7)<span class="reviewer-tag">R1·R2·R3</span></li>
+          <li>📍 "<mark>**0.3 미만으로 낮추지 마세요** — 독립성이 깨집니다.</mark>" (Step 2-7)<span class="reviewer-tag">R1·R2·R3</span></li>
+          <li>📍 "<mark>temperature는 서브에이전트 기본값 사용.</mark>" (Step 2-7)<span class="reviewer-tag">R3</span></li>
+        </ul>
+        <p class="reasoning">벤치마크는 0.7~1.0만 측정한 채 0.3 미만 금지. 0.3~0.7 구간 권장값/허용 미정의. 또한 서브에이전트 기본값 사용한다면서 "낮추지 마세요"의 명령 대상(메인/사용자/서브에이전트)이 모호.</p>
+      </div>
+    </details>
+
+    <details class="issue severity-mid" data-tier="mid">
+      <summary>
+        <span class="iss-id">ISS-10</span>
+        <span class="iss-emoji">🟡</span>
+        <span class="iss-title">HTML 모드 트리거 기준 모호 + 채팅 요약 경로 표기 부정확</span>
+      </summary>
+      <div class="issue-body">
+        <div class="issue-meta">
+          <span class="tag type">Ambiguity</span>
+          <span class="tag severity-MINOR">MINOR</span>
+          <span class="tag">Agents 3/3</span>
+          <span class="tag">Confidence 7/10 (R1: 7, R2: 8, R3: 7)</span>
+          <span class="tag">Evidence 4/5</span>
+        </div>
+        <ul class="quotes">
+          <li>📍 "<mark>사용자가 명시적으로 HTML 출력을 요청하면(\"HTML로\", \"인터랙티브로\", \"단일 HTML 파일\")</mark>" (Step 4)<span class="reviewer-tag">R1·R2</span></li>
+          <li>📍 "<mark>사용자가 \"둘 다\"라고 하면 같은 타임스탬프로 .md + .html 두 개 생성.</mark>" (Step 4a)<span class="reviewer-tag">R1·R2</span></li>
+          <li>📍 "<mark>📄 저장 경로: ./consensus-review-{원본}-{YYYYMMDD-HHMMSS}.md</mark>" (Step 4b)<span class="reviewer-tag">R3</span></li>
+        </ul>
+        <p class="reasoning">"HTML로"/"인터랙티브로"/"단일 HTML 파일" 외 변형 표현이 트리거에 해당하는지 모호. 영어 트리거 미정의. HTML 모드 활성화 시 4b 채팅 요약의 ".md" 표기가 부정확함.</p>
+      </div>
+    </details>
+
+    <details class="issue severity-mid" data-tier="mid">
+      <summary>
+        <span class="iss-id">ISS-11</span>
+        <span class="iss-emoji">🟡</span>
+        <span class="iss-title">서브에이전트 1명 실패 시 N=2 진행 — 비권장 정책과 자동 fallback 충돌</span>
+      </summary>
+      <div class="issue-body">
+        <div class="issue-meta">
+          <span class="tag type">Inconsistency</span>
+          <span class="tag severity-MAJOR">MAJOR</span>
+          <span class="tag">Agents 2/3</span>
+          <span class="tag">Confidence 7/10 (R1: 7, R2: 7)</span>
+          <span class="tag">Evidence 4/5</span>
+        </div>
+        <ul class="quotes">
+          <li>📍 "<mark>**서브에이전트 1명 `write_file` 실패 또는 타임아웃**: 남은 2명으로 진행. 최종 리포트 상단에 `\"Reviewer X 실패 — N=2로 집계됨\"`을 명시.</mark>" (Step 2-8)<span class="reviewer-tag">R1·R2</span></li>
+          <li>📍 "<mark>\"2명만\" → N=2 (비권장).</mark>" (설정 변경)<span class="reviewer-tag">R1</span></li>
+          <li>📍 "<mark>독립성이 이 스킬의 존재 이유입니다. 위반 시 이 스킬의 핵심 효과(확률적 커버리지로 +6.5~30.6%p 재현율 향상)가 사라집니다.</mark>" (Step 2)<span class="reviewer-tag">R2</span></li>
+        </ul>
+        <p class="reasoning">사용자 요청 N=2는 비권장이지만 1명 실패 시 자동 N=2 fallback은 허용. 동일 N=2 상태에 대해 다른 정책 적용. N=2의 재현율 효과 예상치 미정의.</p>
+      </div>
+    </details>
+
+    <details class="issue severity-mid" data-tier="mid">
+      <summary>
+        <span class="iss-id">ISS-12</span>
+        <span class="iss-emoji">🟡</span>
+        <span class="iss-title">200K context 미만 모델 감지 메커니즘 부재</span>
+      </summary>
+      <div class="issue-body">
+        <div class="issue-meta">
+          <span class="tag type">Omission</span>
+          <span class="tag severity-MAJOR">MAJOR</span>
+          <span class="tag">Agents 2/3</span>
+          <span class="tag">Confidence 7/10 (R1: 7, R2: 8)</span>
+          <span class="tag">Evidence 3/5</span>
+        </div>
+        <ul class="quotes">
+          <li>📍 "<mark>최소 요구치: context window ≥ 200K. 그 미만 모델이 감지되면 사용자에게 알리고 중단.</mark>" (Step 2-7)<span class="reviewer-tag">R1·R2</span></li>
+        </ul>
+        <p class="reasoning">"감지되면"의 구체적 메커니즘(API 메타데이터 조회/모델명 매칭/사용자 설정) 미정의. 사용자가 모델 명시 안 한 경우 처리 절차 누락.</p>
+      </div>
+    </details>
+
+    <details class="issue severity-mid" data-tier="mid">
+      <summary>
+        <span class="iss-id">ISS-13</span>
+        <span class="iss-emoji">🟡</span>
+        <span class="iss-title">PROJECT_DIR 결정 모호성 — cwd 정의/상대경로/dirname 기준</span>
+      </summary>
+      <div class="issue-body">
+        <div class="issue-meta">
+          <span class="tag type">Ambiguity</span>
+          <span class="tag severity-MAJOR">MAJOR</span>
+          <span class="tag">Agents 3/3</span>
+          <span class="tag">Confidence 7/10 (R1: 5/6, R2: 8, R3: 8)</span>
+          <span class="tag">Evidence 4/5</span>
+        </div>
+        <ul class="quotes">
+          <li>📍 "<mark>입력이 **파일 경로**면 → `PROJECT_DIR = dirname(document_path)` (해당 파일이 있는 디렉토리)</mark>" (Step 1)<span class="reviewer-tag">R1·R2·R3</span></li>
+          <li>📍 "<mark>입력이 **인라인 텍스트**면 → `PROJECT_DIR = cwd` (현재 작업 디렉토리)</mark>" (Step 1)<span class="reviewer-tag">R1·R3</span></li>
+          <li>📍 "<mark>📄 저장 경로: ./consensus-review-{원본}-{YYYYMMDD-HHMMSS}.md</mark>" (Step 4b)<span class="reviewer-tag">R3</span></li>
+        </ul>
+        <p class="reasoning">cwd 주체(메인/사용자 셸/서브에이전트), 상대경로/~ 처리, 절대경로 정규화가 미정의. 동일 사용자가 같은 문서를 파일경로/인라인으로 입력 시 PROJECT_DIR이 달라져 의도와 다른 위치 저장 위험.</p>
+      </div>
+    </details>
+
+    <details class="issue severity-mid" data-tier="mid">
+      <summary>
+        <span class="iss-id">ISS-14</span>
+        <span class="iss-emoji">🟡</span>
+        <span class="iss-title">aggregate.md {document} 변수 — "경로 또는 전문" 결정 규칙 누락</span>
+      </summary>
+      <div class="issue-body">
+        <div class="issue-meta">
+          <span class="tag type">Inconsistency</span>
+          <span class="tag severity-MAJOR">MAJOR</span>
+          <span class="tag">Agents 2/3</span>
+          <span class="tag">Confidence 8/10 (R1: 7, R2: 8)</span>
+          <span class="tag">Evidence 4/5</span>
+        </div>
+        <ul class="quotes">
+          <li>📍 "<mark>`{document_path}` ← 원본 문서의 파일 경로 (기본).</mark>" (Step 2-3)<span class="reviewer-tag">R1</span></li>
+          <li>📍 "<mark>`{document}` ← 원본 문서 경로 또는 전문</mark>" (Step 3-3)<span class="reviewer-tag">R1·R2</span></li>
+          <li>📍 "<mark>**기본 규칙: 항상 파일 경로만 전달하세요.**</mark>" (Step 2-6)<span class="reviewer-tag">R2</span></li>
+        </ul>
+        <p class="reasoning">서브에이전트는 경로만 강제하면서 aggregate는 "경로 또는 전문" 둘 다 허용. 결정 규칙이 없어 큰 문서 시 토큰 한도 사고 위험 재발 가능.</p>
+      </div>
+    </details>
+
+    <details class="issue severity-mid" data-tier="mid">
+      <summary>
+        <span class="iss-id">ISS-15</span>
+        <span class="iss-emoji">🟡</span>
+        <span class="iss-title">N 동적 처리 vs 본문 N=3 하드코딩 불일치</span>
+      </summary>
+      <div class="issue-body">
+        <div class="issue-meta">
+          <span class="tag type">Inconsistency</span>
+          <span class="tag severity-MAJOR">MAJOR</span>
+          <span class="tag">Agents 3/3</span>
+          <span class="tag">Confidence 8/10 (R1: 8, R2: 9, R3: 6)</span>
+          <span class="tag">Evidence 5/5</span>
+        </div>
+        <ul class="quotes">
+          <li>📍 "<mark>Review Korean/English documents for defects by running N=3 independent LLM reviewers as parallel subagents</mark>" (frontmatter description)<span class="reviewer-tag">R2·R3</span></li>
+          <li>📍 "<mark>서브에이전트 3명을 **동시에** 호출 (병렬).</mark>" (Step 2-3)<span class="reviewer-tag">R1</span></li>
+          <li>📍 "<mark>각 서브에이전트의 output 경로: `{PROJECT_DIR}/.consensus-review-output/{SESSION_ID}/reviewer-{N}.md` (N=1,2,3)</mark>" (Step 2-1)<span class="reviewer-tag">R1</span></li>
+          <li>📍 "<mark>**N 변경**: \"리뷰어 5명으로 해줘\" → N=5. \"2명만\" → N=2 (비권장). 기본은 3.</mark>" (설정 변경)<span class="reviewer-tag">R1·R2·R3</span></li>
+        </ul>
+        <p class="reasoning">description과 본문은 N=3 하드코딩, 설정 변경은 N 변경 가능. N=5 시 reviewer-1~5 사용/디렉토리 명명 절차가 본문에 명시되지 않아 트리거/동작 정의 일관성 결여.</p>
+      </div>
+    </details>
+
+    <details class="issue severity-mid" data-tier="mid">
+      <summary>
+        <span class="iss-id">ISS-16</span>
+        <span class="iss-emoji">🟡</span>
+        <span class="iss-title">최종 리포트 파일명 충돌 — SESSION_ID 난수 vs timestamp만</span>
+      </summary>
+      <div class="issue-body">
+        <div class="issue-meta">
+          <span class="tag type">Inconsistency</span>
+          <span class="tag severity-MINOR">MINOR</span>
+          <span class="tag">Agents 3/3</span>
+          <span class="tag">Confidence 6/10 (R1: 7, R2: 7, R3: 5)</span>
+          <span class="tag">Evidence 3/5</span>
+        </div>
+        <ul class="quotes">
+          <li>📍 "<mark>`{YYYYMMDD-HHMMSS}`: 실행 시점 기준 초 단위 타임스탬프 (같은 초에 겹칠 확률 ≈ 0)</mark>" (Step 4a)<span class="reviewer-tag">R1·R2·R3</span></li>
+          <li>📍 "<mark>**같은 문서를 여러 번 리뷰해도 타임스탬프가 달라 덮어쓰지 않습니다.**</mark>" (Step 4a)<span class="reviewer-tag">R1·R3</span></li>
+          <li>📍 "<mark>`SESSION_ID` 생성: `{YYYYMMDD-HHMMSS}-{4자 난수}` 형태.</mark>" (Step 2-1)<span class="reviewer-tag">R1·R2·R3</span></li>
+        </ul>
+        <p class="reasoning">SESSION_ID는 4자 난수로 충돌 방지하면서 최종 리포트는 timestamp만 사용. 자동화/배치 동시 실행 시 충돌 가능. 일관성 결여.</p>
+      </div>
+    </details>
+
+    <details class="issue severity-mid" data-tier="mid">
+      <summary>
+        <span class="iss-id">ISS-17</span>
+        <span class="iss-emoji">🟡</span>
+        <span class="iss-title">"raw 복사 금지"와 "raw_1, raw_2, raw_3" 변수의 의미 충돌</span>
+      </summary>
+      <div class="issue-body">
+        <div class="issue-meta">
+          <span class="tag type">Ambiguity</span>
+          <span class="tag severity-MINOR">MINOR</span>
+          <span class="tag">Agents 3/3</span>
+          <span class="tag">Confidence 6/10 (R1: 6, R2: 7, R3: 6)</span>
+          <span class="tag">Evidence 3/5</span>
+        </div>
+        <ul class="quotes">
+          <li>📍 "<mark>서브에이전트 return 메시지는 **한 단어**: `\"done\"` (raw 복사 금지)</mark>" (Step 2-2)<span class="reviewer-tag">R1·R2·R3</span></li>
+          <li>📍 "<mark>**서브에이전트가 \"done\" 대신 raw 내용을 return한 경우**: 해당 내용 무시하고 파일을 `read_file`로 직접 읽으세요.</mark>" (Step 2-8)<span class="reviewer-tag">R1·R3</span></li>
+          <li>📍 "<mark>=== Reviewer 1 ===\n{raw_1}</mark>" (Step 3-2)<span class="reviewer-tag">R2·R3</span></li>
+        </ul>
+        <p class="reasoning">"raw 복사", "raw 내용", "raw 리뷰", "raw_1/2/3"의 의미 분화 미정의. 서브에이전트 강제 메커니즘이 없으면서 위반 시 처리 분기가 정의되어 자기모순 구조.</p>
+      </div>
+    </details>
+
+    <details class="issue severity-mid" data-tier="mid">
+      <summary>
+        <span class="iss-id">ISS-18</span>
+        <span class="iss-emoji">🟡</span>
+        <span class="iss-title">write 툴 검증 실패 시 분기 매핑 부정확 (4a vs 2-8)</span>
+      </summary>
+      <div class="issue-body">
+        <div class="issue-meta">
+          <span class="tag type">Inconsistency</span>
+          <span class="tag severity-MINOR">MINOR</span>
+          <span class="tag">Agents 2/3</span>
+          <span class="tag">Confidence 7/10 (R2: 7, R3: 7)</span>
+          <span class="tag">Evidence 4/5</span>
+        </div>
+        <ul class="quotes">
+          <li>📍 "<mark>**저장 후 검증**: `write` 툴 반환값을 확인한 뒤 Step 4b 요약을 출력하세요. 실패하면 차단 상황 분기의 `.consensus-review-output/ 저장 실패` 항목을 따르세요</mark>" (Step 4a)<span class="reviewer-tag">R2·R3</span></li>
+          <li>📍 "<mark>**`.consensus-review-output/` 저장 실패** (디스크 풀/권한/읽기전용 디렉토리): 사용자에게 원인과 함께 보고하고 중단.</mark>" (Step 2-8)<span class="reviewer-tag">R2·R3</span></li>
+        </ul>
+        <p class="reasoning">4a 최종 리포트 저장 위치는 원본 문서 디렉토리, 2-8 분기는 .consensus-review-output/ 디렉토리. 서로 다른 위치인데 같은 분기 적용 지시. 검증 기준(파일 경로/바이트/에러 코드)도 미정의.</p>
+      </div>
+    </details>
+
+  </section>
+
+  <section class="tier-section" data-tier="low">
+    <div class="tier-header">
+      <h2>⚪ Low</h2>
+      <span class="count">— 소수 지적 (6개)</span>
+    </div>
+    <p class="desc">1명만 지적. 환각 가능성이 상대적으로 큼.</p>
+
+    <ul class="low-list">
+      <li><span class="iss-id">ISS-19</span><strong>인라인 텍스트 저장과 SESSION_ID 디렉토리 미생성 시점 충돌</strong> — Step 1에서 input-*.md를 .consensus-review-output/에 저장하지만 이 디렉토리는 Step 2-1에서 생성됨. 절차 순서 명시 누락 (R1).</li>
+      <li><span class="iss-id">ISS-20</span><strong>한글 50% 판정 분모 정의 누락</strong> — 전체 문자수/공백 제외/자모 비율 중 어느 기준인지 미정의. 영문 코드 섞인 한글 문서에서 잘못 분류 가능 (R2).</li>
+      <li><span class="iss-id">ISS-21</span><strong>중간 산출물 자동 정리 정책 부재</strong> — 자동 정리 안 함 정책으로 디스크 무한 증가 위험. 사용량 모니터링/한계 정책 미정의 (R2).</li>
+      <li><span class="iss-id">ISS-22</span><strong>인라인 텍스트 자동 저장 시 사용자 컨센트 미정의</strong> — 잠재 민감 정보를 디렉토리에 자동 저장 시 사용자 동의/사후 안내가 미정의. 보안/프라이버시 누락 (R3).</li>
+      <li><span class="iss-id">ISS-23</span><strong>description 트리거 파일명 vs Step 1 키워드 불일치</strong> — description은 design 포함/nda·rfc 누락, Step 1은 nda·rfc 있고 design 없음. 두 목록 불일치 (R3).</li>
+      <li><span class="iss-id">ISS-24</span><strong>슬래시 명령 트리거 미정의 + 영어 트리거 누락</strong> — description은 자연어 트리거만, /consensus-review 슬래시 지원 여부 불명확. 영어 명시 트리거(as html, interactive) 미정의 (R1·R2).</li>
+    </ul>
+  </section>
+
+  <section class="tier-section" id="detailed-recommendations">
+    <div class="tier-header">
+      <h2>💡 권장 조치</h2>
+    </div>
+    <ul>
+      <li><strong>🔴부터 우선 검토</strong> — 3명 전원 합의라 진짜 결함일 확률이 높습니다. 특히 도구명 통일(ISS-1)과 doc_type_hint 매핑(ISS-2), Tier 분류 규칙 명시(ISS-3)는 스킬이 일관되게 동작하기 위한 필수 수정입니다.</li>
+      <li><strong>측정 기준 3종</strong>(토큰/단어/한글%, ISS-4·5·6)을 본문에 정의하세요. "X 토큰", "500 단어/2KB", "≥50%"가 모두 측정 방법이 미정의되어 실행자마다 결과가 달라질 수 있습니다.</li>
+      <li><strong>외부 파일 의존성 명시</strong>(ISS-6) — SKILL 패키지 디렉토리 구조와 필수 파일 목록(prompts/review.md, prompts/aggregate.md, examples/output_template.md/html)을 본문에 추가하면 무결성 검증이 가능해집니다.</li>
+      <li><strong>🟡까지 시간 여유가 있으면</strong> — 다수 합의라 정밀도 중간 이상입니다. 특히 ISS-11(N=2 자동 fallback)과 ISS-15(N 동적 처리)는 N 변경 시 동작 일관성에 직접 영향을 줍니다.</li>
+      <li><strong>⚪는 리소스 여유 시에만</strong> — 환각 가능성이 상대적으로 큽니다. 다만 ISS-22(컨센트)는 보안 관점에서 검토 가치가 있습니다.</li>
+    </ul>
+  </section>
+
+  <footer>
+    Generated by Consensus Review · N=3 · 독립 LLM 병렬 호출 + Tier 집계 · 세션: 20260512-112329-f413
+  </footer>
+</div>
+
+<script>
+  (function() {
+    const buttons = document.querySelectorAll('.filter-btn');
+    const sections = document.querySelectorAll('.tier-section');
+    const status = document.getElementById('filter-status');
+
+    const filterLabels = {
+      all: '전체 이슈',
+      high: 'High Confidence 이슈',
+      mid: 'Needs Review 이슈',
+      low: 'Low 이슈'
+    };
+
+    function countVisibleIssues(filter) {
+      let count = 0;
+      sections.forEach(s => {
+        const tier = s.dataset.tier;
+        if (!tier) return;
+        if (filter !== 'all' && filter !== tier) return;
+        count += s.querySelectorAll('.issue, .low-list li').length;
+      });
+      return count;
+    }
+
+    function applyFilter(filter) {
+      buttons.forEach(b => {
+        const isActive = b.dataset.filter === filter;
+        b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+      sections.forEach(s => {
+        const tier = s.dataset.tier;
+        if (!tier) return;
+        s.style.display = (filter !== 'all' && filter !== tier) ? 'none' : '';
+      });
+      if (status) {
+        const count = countVisibleIssues(filter);
+        status.textContent = `${filterLabels[filter]} ${count}개 표시 중`;
+      }
+    }
+
+    buttons.forEach(b => b.addEventListener('click', () => applyFilter(b.dataset.filter)));
+    applyFilter('all');
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    const TYPE_ACTIONS = {
+      'Inconsistency': '관련 두 지점을 비교하여 어느 쪽이 정인지 결정 필요',
+      '불일치':        '관련 두 지점을 비교하여 어느 쪽이 정인지 결정 필요',
+      'Omission':      '누락된 항목을 정의·스펙에 추가 필요',
+      '누락':          '누락된 항목을 정의·스펙에 추가 필요',
+      'Ambiguity':     '구체적 수치·조건을 결정하여 명시 필요',
+      '모호':          '구체적 수치·조건을 결정하여 명시 필요',
+      '모호성':        '구체적 수치·조건을 결정하여 명시 필요',
+      'Terminology':   '용어를 통일하거나 Glossary에 정의 추가 필요',
+      '용어':          '용어를 통일하거나 Glossary에 정의 추가 필요',
+      'Structural':    '위치·카테고리를 재분류하거나 섹션 이동 필요',
+      '구조':          '위치·카테고리를 재분류하거나 섹션 이동 필요'
+    };
+
+    document.querySelectorAll('.issue').forEach(issue => {
+      const summary = issue.querySelector('summary');
+      const body = issue.querySelector('.issue-body');
+      if (!summary || !body) return;
+
+      const reasoningEl = body.querySelector('.reasoning');
+      const typeTag = body.querySelector('.tag.type');
+      const quotes = body.querySelector('.quotes');
+      const quoteCount = quotes ? quotes.querySelectorAll('li').length : 0;
+
+      if (!summary.querySelector('.marker')) {
+        const marker = document.createElement('span');
+        marker.className = 'marker';
+        marker.setAttribute('aria-hidden', 'true');
+        marker.textContent = '▸';
+        summary.appendChild(marker);
+      }
+
+      const sources = [];
+      if (quotes) {
+        quotes.querySelectorAll('li').forEach(li => {
+          const clone = li.cloneNode(true);
+          clone.querySelectorAll('.reviewer-tag').forEach(t => t.remove());
+          const text = clone.textContent;
+          const match = text.match(/\(([^()]+)\)\s*$/);
+          if (match) {
+            const src = match[1].trim();
+            if (src && !sources.includes(src)) sources.push(src);
+          }
+        });
+      }
+
+      if (!issue.querySelector(':scope > .glance') && (reasoningEl || typeTag || sources.length)) {
+        const glance = document.createElement('div');
+        glance.className = 'glance';
+
+        if (reasoningEl) {
+          const diagnose = document.createElement('div');
+          diagnose.className = 'diagnose';
+          const labelSpan = document.createElement('span');
+          labelSpan.className = 'label';
+          labelSpan.textContent = '🔍 진단';
+          const contentSpan = document.createElement('span');
+          Array.from(reasoningEl.childNodes).forEach(node => {
+            contentSpan.appendChild(node.cloneNode(true));
+          });
+          diagnose.appendChild(labelSpan);
+          diagnose.appendChild(contentSpan);
+          glance.appendChild(diagnose);
+        }
+
+        const typeText = typeTag ? typeTag.textContent.trim() : '';
+        const action = TYPE_ACTIONS[typeText];
+        if (action) {
+          const actionEl = document.createElement('div');
+          actionEl.className = 'action';
+          const labelSpan = document.createElement('span');
+          labelSpan.className = 'label';
+          labelSpan.textContent = '👉 검토';
+          const contentSpan = document.createElement('span');
+          contentSpan.textContent = action;
+          if (quoteCount > 0) {
+            const ec = document.createElement('span');
+            ec.className = 'evidence-count';
+            ec.textContent = ` · 근거 ${quoteCount}건`;
+            contentSpan.appendChild(ec);
+          }
+          actionEl.appendChild(labelSpan);
+          actionEl.appendChild(contentSpan);
+          glance.appendChild(actionEl);
+        }
+
+        if (sources.length) {
+          const sourceEl = document.createElement('div');
+          sourceEl.className = 'source';
+          const labelSpan = document.createElement('span');
+          labelSpan.className = 'label';
+          labelSpan.textContent = '📍 출처';
+          const listSpan = document.createElement('span');
+          listSpan.className = 'source-list';
+          listSpan.textContent = sources.join(' · ');
+          sourceEl.appendChild(labelSpan);
+          sourceEl.appendChild(listSpan);
+          glance.appendChild(sourceEl);
+        }
+
+        summary.insertAdjacentElement('afterend', glance);
+      }
+
+      if (quotes && quoteCount > 0 && !body.querySelector('.quotes-header')) {
+        const header = document.createElement('p');
+        header.className = 'quotes-header';
+        header.innerHTML = `근거 인용 ${escapeHtml(String(quoteCount))}건 <span class="help">— 같은 root cause를 입증</span>`;
+        quotes.parentNode.insertBefore(header, quotes);
+      }
+    });
+
+    const detailsElements = document.querySelectorAll('details');
+    const printOpenState = new WeakMap();
+    window.addEventListener('beforeprint', () => {
+      detailsElements.forEach(d => {
+        printOpenState.set(d, d.open);
+        d.open = true;
+      });
+    });
+    window.addEventListener('afterprint', () => {
+      detailsElements.forEach(d => {
+        if (printOpenState.has(d)) d.open = printOpenState.get(d);
+      });
+    });
+  })();
+</script>
+</body>
+</html>

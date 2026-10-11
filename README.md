@@ -204,28 +204,23 @@ inconsistencies, and unclear language.
 1. 문서 언어(ko/en)와 유형 감지
 2. 서브에이전트 3명을 **병렬**로 실행 — 동일 프롬프트, 독립 추론
 3. 3명의 결과를 합의 Tier(🔴/🟡/⚪)로 집계
-4. Markdown 리포트 출력
+4. 문서 옆에 **short 리포트**(이슈당 한 줄) 저장 + 채팅 요약
 
-샘플 출력:
+샘플 출력 (short, 기본):
 
 ```markdown
-# 📋 Consensus Review 결과
-총 11개 고유 이슈 (🔴 4, 🟡 5, ⚪ 2)
+# Consensus Review — sample_aws_architecture.md
 
-## 🔴 High Confidence — 전원 합의 (4개)
-### ISS-1: 가용영역(AZ) 간 라우팅 조건 누락
+리뷰어 3명 · 이슈 11개 (🔴 4 · 🟡 5 · ⚪ 2) · 먼저 고칠 것 4개 · 상세: `.consensus-review-output/…/full-report.md`
+
+## 🔴 먼저 고칠 것 — 전원 합의, CRITICAL/MAJOR
+1. **ISS-1 가용성 SLA 목표가 두 섹션에서 다름** (§1 ↔ §3) — 99.95%와 99.99% 중 공식 SLA 하나로 통일
 ...
-
-## 🟡 Needs Review — 다수 합의 (5개)
-...
-
-## ⚪ Low — 소수 지적 (2개)
-...
-
-💡 🔴부터 우선 검토하세요.
 ```
 
-전체 예시: [`examples/sample_run.md`](examples/sample_run.md)
+인용·Severity·Confidence가 담긴 full 상세는 매번 세션 디렉토리에 남습니다. "풀 버전"이라고 하면 재실행 없이 문서 옆으로 꺼내 줍니다.
+
+채팅·short·full 전체 예시: [`examples/sample_run.md`](examples/sample_run.md)
 
 ### 5. 설정 바꾸기 (선택)
 
@@ -234,6 +229,7 @@ inconsistencies, and unclear language.
 - `"리뷰어 5명으로 해줘"` → N=5 (기본 N=3)
 - `"보안 이슈만 봐줘"` → 프롬프트에 지시 추가
 - `"한국어로 출력해줘"` → 최종 리포트를 한국어로
+- `"풀 버전으로 리뷰해줘"` → full 리포트(이슈별 인용·Severity·Confidence). 기본은 short.
 - `"HTML 리포트로 만들어줘"` → 인터랙티브 HTML(접고 펼치기, 필터, 다크모드) 출력. 기본은 Markdown.
 
 ---
@@ -247,7 +243,7 @@ inconsistencies, and unclear language.
 | 리뷰어 수 N | 3 | SKILL.md Step 2, 또는 사용자 요청으로 런타임 변경 |
 | 모델 | 사용자 설정 따라감 | 에이전트 툴 설정 |
 | 출력 언어 | 문서 언어 감지 (ko/en) | 사용자 요청으로 강제 가능 |
-| 출력 형식 | Markdown | 사용자 요청으로 HTML 전환 ("HTML로 보여줘") |
+| 리포트 모드 | short (이슈당 한 줄) | "풀 버전" → full, "HTML로" → HTML |
 | Tier 기준 | 🔴=3/3, 🟡=2/3, ⚪=1/3 | `prompts/aggregate.md` 변경 시 |
 | 결과 파일 저장 | `./consensus-review-{원본}-{YYYYMMDD-HHMMSS}.md` | SKILL.md Step 4 |
 
@@ -298,9 +294,11 @@ consensus-review/
 │   ├── review.md                     # 서브에이전트용 리뷰 프롬프트
 │   └── aggregate.md                  # 메인 에이전트용 집계 프롬프트
 ├── references/
-│   └── benchmark_summary.md          # 설계 근거 (실험 결과)
+│   ├── benchmark_summary.md          # 설계 근거 (실험 결과)
+│   ├── design-notes.md               # 규칙 뒤의 이유 (사고 이력 등)
+│   └── html-mode.md                  # HTML 모드 렌더링 규칙
 └── examples/
-    ├── output_template.md            # 사용자 보고 템플릿 (Markdown)
+    ├── output_template.md            # Short / Full / Chat 출력 형식
     ├── output_template.html          # 사용자 보고 템플릿 (HTML, 자기완결형)
     ├── sample_aws_architecture.md    # 샘플 입력 문서 (AWS 아키텍처)
     ├── sample_run.md                 # 샘플 실행 결과 (Markdown)

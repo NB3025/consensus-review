@@ -1,131 +1,66 @@
 # Aggregation Prompt
 
-> 이 프롬프트는 `consensus-review` 스킬의 Step 3에서 메인 에이전트가 직접 실행합니다 (서브에이전트 아님).
->
-> **변수**:
-> - `{n_agents}` — 리뷰어 수 (기본 3)
-> - `{document}` — 원본 문서 전체 또는 **파일 경로**. 집계는 1회 호출이라 중복 문제가 없어 인라인 허용. 다만 문서가 매우 크면 경로로 넘기고 `read_file`로 로드해도 됨.
-> - `{reviews}` — 각 리뷰어의 raw 출력. `=== Reviewer 1 ===\n...\n\n=== Reviewer 2 ===\n...` 형태로 이어붙임.
+> 메인 에이전트가 Step 3에서 직접 실행합니다 (서브에이전트 아님).
+> `{n_agents}` 성공한 리뷰어 수 · `{document}` 원본 문서 경로 · `{reviews}` `=== Reviewer i ===`로 이어붙인 리뷰어 원문
 
 ---
 
-You are aggregating results from {n_agents} independent reviewers who examined a document for defects.
+You are aggregating findings from {n_agents} blind reviewers of one document. Your job is to **deduplicate and vote**, not to review: every finding comes from a reviewer, and you add none of your own.
 
-Your job: collect all unique findings, merge duplicates, and assign agreement tiers.
+**Coverage**: every finding from every reviewer appears in the output, either as its own entry or merged into another.
 
-**IMPORTANT**: Only report what reviewers explicitly identified. Do not invent, infer, or extrapolate issues beyond what reviewers stated. Adding your own findings will corrupt the aggregation and invalidate the results.
+## Merge
 
-## Merge Rules
+**Default is merge.** Over-splitting fragments the consensus signal and inflates the count.
 
-**COVERAGE RULE**: Every finding from every reviewer must appear in output — either as its own entry or merged into another. Missing a reviewer's finding is a failure.
+- Merge when two findings share the same **root cause** and the same consequence, even if they quote different sentences, differ in detail, or use different terms.
+- Keep separate when the root cause or the consequence differs, even if they sit in the same paragraph or have the same Type.
+- If one reviewer packed several distinct defects into one entry, split them (or keep labelled sub-points). "Table 2 has a unit error and a wrong total" is two issues, not "Table 2 has errors".
+- A reviewer who flags the same defect twice counts once.
+- If reviewers contradict (one flags, one explicitly says it is fine), count only those who flagged it and note `R{i} disagreed: {reason}`.
 
-**DEFAULT ACTION IS MERGE.** When in doubt, merge. **Over-splitting fragments the consensus signal and inflates the issue count** — this breaks downstream tier classification and recall measurement.
+Example — merge: R1 "GDP on page 3 says $21T but the source says $23T", R3 "the GDP figure looks wrong against the cited report" → one issue, R1's version, both quotes.
+Example — separate: R1 "GDP figure $21T vs $23T", R2 "growth rate 2.1% vs 3.4%" → two issues.
 
-1. MERGE if two issues describe the SAME underlying problem — same root cause, same consequence — even if quoted text differs.
-2. SEPARATE only if genuinely DIFFERENT problems: different root cause OR different consequence.
-3. When merging, keep the most specific description. Preserve all distinct quotes from each reviewer.
-4. If one reviewer flags it and another says "not a problem", count ONLY those who flagged it as an error.
+## Preserve
 
-### Merge Examples
+Downstream evaluation reads these fields, so carry them over rather than rewriting them:
 
-MERGE (same root cause):
-- Reviewer 1: "GDP figure on page 3 says $21T but source says $23T"
-- Reviewer 3: "The GDP number appears incorrect based on the cited report"
-→ One issue. Keep Reviewer 1's version (more specific). Cite both.
+- **Type**: majority of the merged reviewers. With no majority, list the Types tied for most votes, joined by ` / ` in reviewer order — `Type: Omission / Ambiguity (R2: Omission, R3: Ambiguity)`.
+- **Title**: the most specific reviewer's title, verbatim.
+- **Reasoning**: the most specific reviewer's argument; you may add one clause saying why the merged quotes share a root cause.
+- **Quotes**: every exact quote from every merged reviewer.
+- **Fix**: the most specific reviewer's Fix, verbatim.
+- **Severity / Confidence**: the median of the reviewers' values, individual values in parentheses — `Confidence: 7 (R1: 8, R2: 7, R3: 5)`. Use the reviewers' scores as given. With an even number of values, Severity takes the higher of the two middle values and Confidence takes their mean, rounded down — `Severity: MAJOR (R2: MAJOR, R3: MINOR)`, `Confidence: 5 (R2: 6, R3: 4)`.
 
-SEPARATE (different root cause):
-- Reviewer 1: "GDP figure is wrong — $21T vs $23T"
-- Reviewer 2: "GDP growth rate is wrong — 2.1% vs 3.4%"
-→ Two issues. Different data points, different errors.
+## Tiers
 
-## Recognize your own merge biases
+- 🔴 all {n_agents} reviewers flagged it
+- 🟡 at least ceil({n_agents}/2), not all
+- ⚪ below majority
 
-You will be tempted to split issues that should be merged:
-- "They quoted different sentences" — different quotes can describe the same error. Merge.
-- "One reviewer was more detailed" — detail level is not a reason to separate. Merge and keep the detailed version.
-- "They used different terminology" — terminology is not root cause. If the underlying problem is the same, merge.
+n=3: 🔴 3/3, 🟡 2/3, ⚪ 1/3 · n=5: 🔴 5/5, 🟡 3–4/5, ⚪ 1–2/5
 
-You will also be tempted to merge issues that should be separate:
-- "They're in the same paragraph" — proximity is not sameness. Check root cause.
-- "They're the same type of error" — two typos are two issues if they're different words.
-
-**If you catch yourself justifying a merge with "close enough" or a split with "slightly different wording", stop.** Re-check root cause and consequence — if they match, merge; otherwise split. Do not rationalize past the rule.
-
-## Preservation Rules
-
-These rules exist because downstream evaluation uses Type, Title, and Reasoning as signals. Rewriting reviewer findings breaks this.
-
-1. **Type preservation**: When merging, use the Type assigned by the MAJORITY of reviewers. Do NOT reclassify based on your own judgment.
-2. **Title preservation**: Use the most specific reviewer's title VERBATIM. Do NOT paraphrase.
-3. **Framing preservation**: Keep the most specific reviewer's reasoning structure intact. You may ADD quotes from other reviewers, but do NOT reframe the core argument.
-4. **Evidence preservation**: Every exact quote cited by any reviewer MUST appear in the merged output. Do not summarize or paraphrase quotes.
-5. **Granularity preservation**: If a reviewer packed multiple distinct errors into one ISS entry, preserve each separately — either as sub-points within the merged entry or as separate issues.
-
-   **Example**:
-   - Reviewer 2 ISS-4: "Table 2 has two problems: the units column says 'kg' but should be 'g', and the total row sums wrong."
-   → Split into two ISS entries (different root causes: unit error vs arithmetic error), or keep one entry with two clearly-labeled sub-points. **Do not collapse into "Table 2 has errors."**
-
-## Agreement Tiers
-
-- 🔴 **High Confidence**: all {n_agents} reviewers agreed
-- 🟡 **Needs Review**: majority (≥ ceil({n_agents}/2)) but not all
-- ⚪ **Low**: below majority
-
-For {n_agents}=3: 🔴 = 3/3, 🟡 = 2/3, ⚪ = 1/3
-
-**Examples for other n**:
-- {n_agents}=5: 🔴 = 5/5, 🟡 = 3–4/5, ⚪ = 1–2/5
-- {n_agents}=7: 🔴 = 7/7, 🟡 = 4–6/7, ⚪ = 1–3/7
-
-## Scoring (리뷰어 값 재사용)
-
-리뷰어가 이미 각 ISS에 Confidence(1-10)와 Evidence Strength(1-5)를 부여했습니다 (`prompts/review.md`의 앵커 정의 참조). Aggregator는 **재평가하지 말고** 리뷰어 값을 그대로 사용하세요.
-
-- 복수 리뷰어가 같은 이슈에 서로 다른 값을 준 경우: **중앙값(median)**을 output에 기록. 괄호 안에 개별 값도 표기.
-  - 예: `Confidence: 7 (R1: 8, R2: 7, R3: 5)`
-- 단일 리뷰어만 점수를 준 경우: 그 값 그대로.
-
-기준 재정의는 **금지** — 리뷰어의 앵커 정의(Confidence 9-10 = "direct contradiction with two exact quotes" 등)가 시스템 기준입니다.
-
-## Output Format
-
-For each issue:
+## Output
 
 ```
-### ISS-{number}: {title}
+### ISS-{n}: {title}
 - Verdict: 🔴 | 🟡 | ⚪
 - Type: {type}
+- Severity: {median} ({R1: …, R2: …})
 - Agents: {count}/{n_agents} flagged
-- Confidence: {score}/10 — {justification}
-- Evidence Strength: {score}/5
+- Confidence: {median}/10 ({R1: …, R2: …})
 - Quotes:
-  📍 "{exact quote}" — Reviewer {id}
-- Reasoning: ≤40 words. State the defect in one sentence. If merged, add one sentence explaining why the quotes describe the same root cause. If split, omit the merge clause.
+  📍 "{exact quote}" (Section X) — R{i}
+- Reasoning: {≤40 words}
+- Fix: {≤15 words}
 ```
 
-Order by: Verdict (🔴 → 🟡 → ⚪), then Confidence descending.
+Order by Verdict (🔴 → 🟡 → ⚪), then Confidence descending. Number ISS-1… in that order.
 
-**Reasoning 예시**:
-- Good (merged): `"Section 3과 7이 uptime SLA 99.99% vs 99.9%로 상충 (R1·R3). 동일 root cause — uptime 계약 불이행."`
-- Good (split): `"Section 4 결제 흐름에 refund 경로 누락."`
-- Bad (re-quoting filler): `"As Reviewer 1 noted, Section 3 says 99.99%..."`
-- Bad (vague): `"This causes inconsistency."`
-
-If no issues found across ALL reviewers: respond with exactly "No issues found."
-
-## Edge Cases
-
-- Reviewer output is empty, contains no ISS-N entries, or cannot be split into discrete findings → exclude that reviewer. Note: `"R{n} excluded (reason: {empty | no ISS entries | unstructured})"`. Adjust denominator accordingly.
-- Single reviewer duplicates the same finding across multiple ISS entries within their own output → count as **ONE flag** from that reviewer. Preserve all quotes, but do not inflate the denominator.
-- Reviewers directly contradict on the SAME finding (one flags error, another explicitly says "not a problem") → count only those who flagged it. Note in Reasoning: `"R{n} disagreed: {their reason}"`.
-- All reviewers report 0 issues → respond with exactly "No issues found." **Do not search for issues yourself.**
-
-## Reminders
-
-- DEFAULT IS MERGE. Prefer fewer well-supported items over many fragments.
-- Only report what reviewers found. Do not add your own findings. Doing so invalidates the aggregation.
-- Every issue from every reviewer must appear — either as its own entry or merged into another.
-- PRESERVE reviewer Type, Title, and Reasoning verbatim. Your role is to deduplicate and vote, not to rewrite.
+Edge cases:
+- A reviewer output that is empty or has no ISS entries is excluded: note `R{i} excluded ({reason})` and reduce {n_agents}.
+- If every reviewer reported no issues, the whole output is exactly `No issues found.`
 
 ---
 

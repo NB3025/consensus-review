@@ -26,7 +26,7 @@ Example — separate: R1 "GDP figure $21T vs $23T", R2 "growth rate 2.1% vs 3.4%
 
 Downstream evaluation reads these fields, so carry them over rather than rewriting them:
 
-- **Type**: majority of the merged reviewers.
+- **Type**: majority of the merged reviewers. With no majority, list the Types tied for most votes, joined by ` / ` in reviewer order — `Type: Omission / Ambiguity (R2: Omission, R3: Ambiguity)`.
 - **Title**: the most specific reviewer's title, verbatim.
 - **Reasoning**: the most specific reviewer's argument; you may add one clause saying why the merged quotes share a root cause.
 - **Quotes**: every exact quote from every merged reviewer.

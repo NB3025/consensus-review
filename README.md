@@ -214,13 +214,13 @@ inconsistencies, and unclear language.
 리뷰어 3명 · 이슈 11개 (🔴 4 · 🟡 5 · ⚪ 2) · 먼저 고칠 것 4개 · 상세: `.consensus-review-output/…/full-report.md`
 
 ## 🔴 먼저 고칠 것 — 전원 합의, CRITICAL/MAJOR
-1. **ISS-1 가용영역(AZ) 간 라우팅 조건 누락** (§3 Network) — AZ 장애 시 라우팅 규칙 명시
+1. **ISS-1 가용성 SLA 목표가 두 섹션에서 다름** (§1 ↔ §3) — 99.95%와 99.99% 중 공식 SLA 하나로 통일
 ...
 ```
 
 인용·Severity·Confidence가 담긴 full 상세는 매번 세션 디렉토리에 남습니다. "풀 버전"이라고 하면 재실행 없이 문서 옆으로 꺼내 줍니다.
 
-full 예시: [`examples/sample_run.md`](examples/sample_run.md)
+채팅·short·full 전체 예시: [`examples/sample_run.md`](examples/sample_run.md)
 
 ### 5. 설정 바꾸기 (선택)
 

@@ -4,7 +4,7 @@
 
 ---
 
-Find every defect in `{document_path}` (a `{doc_type_hint}` document) — statements that contradict each other, things referenced or promised but never defined, and wording a reader could take two ways. Other reviewers work on it separately and their findings are unioned, so recall matters more than brevity. Zero issues is a valid answer.
+Find every defect in `{document_path}` (a `{doc_type_hint}` document) — statements that contradict each other, things referenced or promised but never defined, wording a reader could take two ways, one thing called by two names or an abbreviation never spelled out, and a goal that depends on something no requirement specifies. Other reviewers work on it separately and their findings are unioned, so recall matters more than brevity. Zero issues is a valid answer.
 
 Effort: read the whole document and cross-check its sections against each other. Read nothing else except files it explicitly references.
 

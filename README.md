@@ -240,12 +240,12 @@ inconsistencies, and unclear language.
 
 | 설정 | 기본값 | 변경 가능 위치 |
 |---|---|---|
-| 리뷰어 수 N | 3 | SKILL.md Step 2, 또는 사용자 요청으로 런타임 변경 |
+| 리뷰어 수 N | 3 | SKILL.md, 또는 사용자 요청으로 런타임 변경 |
 | 모델 | 사용자 설정 따라감 | 에이전트 툴 설정 |
 | 출력 언어 | 문서 언어 감지 (ko/en) | 사용자 요청으로 강제 가능 |
 | 리포트 모드 | short (이슈당 한 줄) | "풀 버전" → full, "HTML로" → HTML |
 | Tier 기준 | 🔴=3/3, 🟡=2/3, ⚪=1/3 | `prompts/aggregate.md` 변경 시 |
-| 결과 파일 저장 | `./consensus-review-{원본}-{YYYYMMDD-HHMMSS}.md` | SKILL.md Step 4 |
+| 결과 파일 저장 | `./consensus-review-{원본}-{YYYYMMDD-HHMMSS}.md` | SKILL.md |
 
 ### 리뷰 결과 파일 — .gitignore 팁
 
